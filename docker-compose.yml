@@ -1,0 +1,59 @@
+services:
+  babysitarr:
+    build: .
+    container_name: babysitarr
+    restart: unless-stopped
+    environment:
+      # Check interval in seconds
+      - CHECK_INTERVAL=120
+      # Real-Debrid API key (get from https://real-debrid.com/apitoken)
+      - RD_API_KEY=your-rd-api-key
+      # Decypharr URL and state file path
+      - DECYPHARR_URL=http://decypharr:8282
+      - DECYPHARR_STATE=/decypharr-config/torrents.json
+      # Download directories to monitor (comma-separated)
+      - DOWNLOAD_DIRS=/downloads/movies-1080p,/downloads/movies-4k,/downloads/shows-1080p,/downloads/shows-4k
+      # Arr instances: name|type|host|port|apikey
+      - RADARR=radarr|radarr|radarr|7878|your-radarr-api-key
+      - RADARR4K=radarr4k|radarr|radarr4k|7878|your-radarr4k-api-key
+      - SONARR=sonarr|sonarr|sonarr|8989|your-sonarr-api-key
+      - SONARR4K=sonarr4k|sonarr|sonarr4k|8989|your-sonarr4k-api-key
+      # Email notifications (optional)
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=
+      - SMTP_PASS=
+      - EMAIL_FROM=
+      - EMAIL_TO=
+      # Discord notifications (optional)
+      - DISCORD_WEBHOOK_URL=
+      # Thresholds
+      - STUCK_DOWNLOAD_TIMEOUT=600
+      - LOOP_THRESHOLD=5
+      - IMPORT_STALL_TIMEOUT=300
+      - STUCK_QUEUE_TIMEOUT=1800
+      - MAX_WORKERS=3
+      - WEB_PORT=8284
+      - EMAIL_COOLDOWN=3600
+      - TZ=UTC
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+      # Decypharr config (for stuck download detection)
+      - /path/to/decypharr/config:/decypharr-config
+      # Download directories (read-only)
+      - /path/to/downloads:/downloads:ro
+      # Arr config directories (for DB reset feature)
+      - /path/to/radarr/config:/arr-configs/radarr
+      - /path/to/radarr4k/config:/arr-configs/radarr4k
+      - /path/to/sonarr/config:/arr-configs/sonarr
+      - /path/to/sonarr4k/config:/arr-configs/sonarr4k
+      - /path/to/prowlarr/config:/arr-configs/prowlarr
+    ports:
+      - "8284:8284"
+    networks:
+      - your-media-network
+
+networks:
+  your-media-network:
+    external: true
