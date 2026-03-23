@@ -1993,7 +1993,7 @@ tr:last-child td{{border-bottom:none;}}
     </div>
 </div>
 <div class="toast" id="toast"></div>
-<div class="footer">Checks every {CHECK_INTERVAL}s &middot; Auto-fixes run each cycle</div>
+<div class="footer">Checks every {CHECK_INTERVAL}s &middot; Auto-fixes run each cycle &middot; <a href="https://buymeacoffee.com/Davidalves" target="_blank" style="color:#999;text-decoration:none;">☕ Buy me a coffee</a></div>
 
 <script>
 let pendingFixes = [];
