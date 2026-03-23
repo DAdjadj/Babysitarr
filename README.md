@@ -1,6 +1,6 @@
 # Babysitarr
 
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-support-yellow?style=flat&logo=buy-me-a-coffee)](https://buymeacoffee.com/Davidalves)
+<a href="https://buymeacoffee.com/Davidalves"><img src="https://img.buymeacoffee.com/button-api/?text=Buy me a coffee&emoji=☕&slug=Davidalves&button_colour=FFDD00&font_colour=000000&font_family=Cookie&outline_colour=000000&coffee_colour=ffffff" height="50" /></a>
 
 A self-healing monitoring daemon for the **Radarr/Sonarr + Real-Debrid** pipeline. Babysitarr watches your arr stack around the clock, detects problems, and fixes them automatically — so you don't have to.
 
