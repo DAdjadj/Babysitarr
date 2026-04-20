@@ -86,6 +86,7 @@ IMPORT_STALL_TIMEOUT   = int(os.getenv("IMPORT_STALL_TIMEOUT", "300"))    # 5 mi
 MAX_WORKERS            = int(os.getenv("MAX_WORKERS", "3"))
 STUCK_QUEUE_TIMEOUT    = int(os.getenv("STUCK_QUEUE_TIMEOUT", "1800"))    # 30 min for stuck queue items
 DEAD_RETRY_LIMIT       = int(os.getenv("DEAD_RETRY_LIMIT", "3"))
+RD_ORPHAN_STRIKES      = int(os.getenv("RD_ORPHAN_STRIKES", "2"))         # strikes before auto-blocking an orphan RD magnet_error
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -124,6 +125,7 @@ def load_state():
         "library_snapshot": {},     # {arr: {id: {title, has_file/file_count}}}
         "library_deletions": [],    # list of {arr, title, id, detail, detected_at}
         "library_grace": {},        # grace counters for transient API blips
+        "rd_orphan_seen": {},       # hash -> strike count for orphan RD magnet_errors
     }
 
 def save_state(state):
@@ -304,6 +306,62 @@ def arr_search_missing(arr):
     info = ARRS[arr]
     cmd_name = "MissingMoviesSearch" if info["type"] == "radarr" else "MissingEpisodeSearch"
     return arr_post(arr, "command", {"name": cmd_name})
+
+RELEASE_PROFILE_NAME = "Babysitarr auto-blocks"
+
+def arr_add_release_profile_ignore(arr, term, profile_name=RELEASE_PROFILE_NAME):
+    """Add a term to a named Release Profile's ignored list. Creates the profile if absent.
+    Idempotent — repeated calls with the same term are no-ops."""
+    info = ARRS[arr]
+    profiles = arr_get(arr, "releaseprofile") or []
+    existing = next((p for p in profiles if p.get("name") == profile_name), None)
+    if existing:
+        ignored = list(existing.get("ignored", []))
+        if term in ignored:
+            return True
+        ignored.append(term)
+        payload = dict(existing)
+        payload["ignored"] = ignored
+        url = f"http://{info['host']}:{info['port']}/api/v3/releaseprofile/{existing['id']}?apikey={info['key']}"
+        try:
+            r = requests.put(url, json=payload, timeout=15)
+            return r.ok
+        except Exception:
+            return False
+    payload = {
+        "name": profile_name,
+        "enabled": True,
+        "required": [],
+        "ignored": [term],
+        "indexerId": 0,
+        "tags": [],
+    }
+    return bool(arr_post(arr, "releaseprofile", payload))
+
+_ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+DECYPHARR_LOG_FILE = os.getenv("DECYPHARR_LOG_FILE", "/decypharr-config/logs/decypharr.log")
+
+def decypharr_lookup_hash(hash_val):
+    """Scan the decypharr log file for a hash. Returns (category, release_name) or None.
+    Works around decypharr's dirty-write bug where a magnet is submitted to RD
+    even when decypharr returns 400 to the arr (so no arr queue entry exists)."""
+    if not os.path.exists(DECYPHARR_LOG_FILE):
+        log.warning(f"Decypharr log file not found: {DECYPHARR_LOG_FILE}")
+        return None
+    hash_lower = hash_val.lower()
+    try:
+        with open(DECYPHARR_LOG_FILE, errors="replace") as f:
+            for line in f:
+                if hash_lower not in line.lower() or "Processing torrent" not in line:
+                    continue
+                plain = _ANSI_RE.sub("", line)
+                mcat = re.search(r'Arr=(\S+)', plain)
+                mname = re.search(r'Name="([^"]+)"', plain)
+                if mcat and mname:
+                    return mcat.group(1), mname.group(1)
+    except Exception as e:
+        log.warning(f"Could not read decypharr log: {e}")
+    return None
 
 def _wait_container_stopped(cn, timeout=20):
     """Wait until a container is fully stopped (not running)."""
@@ -882,6 +940,7 @@ def check_rd_health(state):
 
     # Build set of problem hashes for matching against arr queues
     problem_hashes = {p["hash"] for p in problems if p["hash"]}
+    matched_hashes = set()
 
     # Remove matching queue items from arrs and trigger re-search
     retried = []
@@ -898,6 +957,7 @@ def check_rd_health(state):
             if did not in problem_hashes:
                 continue
 
+            matched_hashes.add(did)
             title = record.get("title", "unknown")[:80]
             if arr_remove_queue_item(arr_name, record["id"], blocklist=False):
                 log.info(f"Removed bad torrent from {arr_name} queue: {title}")
@@ -921,17 +981,62 @@ def check_rd_health(state):
             arr_post(arr_name, "command", {"name": "SeriesSearch", "seriesId": sid})
             log.info(f"Triggered re-search for series {sid} in {arr_name}")
 
+    # Orphans: magnet_error torrents with no matching arr queue entry — symptom of
+    # decypharr's dirty-write bug (submits to RD even when it returns 400 to the arr,
+    # so the arr has no history/blocklist entry and re-grabs the same bad release
+    # on the next RSS cycle). Track strikes per hash; after RD_ORPHAN_STRIKES,
+    # look up the release name in decypharr logs and add it as an ignored term
+    # in every arr's Release Profile. This breaks the loop.
+    orphan_problems = [p for p in problems if p["hash"] and p["hash"] not in matched_hashes]
+    orphan_seen = state.setdefault("rd_orphan_seen", {})
+    auto_blocked = []
+    for p in orphan_problems:
+        h = p["hash"]
+        orphan_seen[h] = orphan_seen.get(h, 0) + 1
+        if orphan_seen[h] < RD_ORPHAN_STRIKES:
+            continue
+        lookup = decypharr_lookup_hash(h)
+        if not lookup:
+            continue
+        category, release_name = lookup
+        ok_arrs = [a for a in ARRS if arr_add_release_profile_ignore(a, release_name)]
+        if ok_arrs:
+            auto_blocked.append((release_name, category, ok_arrs))
+            log_action(
+                state, "rd_orphan_blocked",
+                f"Auto-blocked '{release_name}' (category={category}, hash={h[:12]}..) in {','.join(ok_arrs)} after {orphan_seen[h]} strikes"
+            )
+            orphan_seen.pop(h, None)
+    # Prune strike counter to avoid unbounded growth
+    if len(orphan_seen) > 500:
+        state["rd_orphan_seen"] = dict(list(orphan_seen.items())[-500:])
+
     # Track and alert
     for p in problems:
         state.setdefault("rd_removed", []).append(p)
         log_action(state, "rd_problem", f"RD torrent {p['status']}: {p['name']}")
 
-    if retried:
+    if retried or auto_blocked:
+        lines = []
+        if retried:
+            lines.append(f"Auto-retried in arr queues ({len(retried)}):")
+            lines.extend(f"  - {t}" for t in retried[:20])
+        if auto_blocked:
+            if lines:
+                lines.append("")
+            lines.append(f"Auto-blocked via Release Profile ({len(auto_blocked)}):")
+            for name, cat, arrs in auto_blocked[:20]:
+                lines.append(f"  - '{name}' [{cat}] → {','.join(arrs)}")
+            lines.append("")
+            lines.append(
+                "These releases were being re-grabbed every RSS cycle due to a "
+                "decypharr bug (submits to RD even when rejecting the arr's request). "
+                "Added as ignored terms so the loop stops."
+            )
         send_notification(
-            f"{len(retried)} RD torrents auto-retried",
-            f"Real-Debrid reported problems with these torrents. They have been "
-            f"deleted from RD and re-searched in your arrs:\n\n"
-            + "\n".join(f"  - {t}" for t in retried[:20])
+            f"RD health: {len(retried)} retried, {len(auto_blocked)} auto-blocked",
+            "\n".join(lines),
+            level="info" if not retried else "alert",
         )
     else:
         send_notification(
@@ -1900,6 +2005,7 @@ class StatusHandler(BaseHTTPRequestHandler):
             "suspicious_deletion": ("Suspicious file deletion", "#ef4444"),
             "file_deleted": ("File cleaned up", "#6e6e73"),
             "rd_problem": ("Real-Debrid issue", "#ef4444"),
+            "rd_orphan_blocked": ("Auto-blocked orphan RD release", "#10b981"),
             "search_missing": ("Triggered missing search", "#10b981"),
             "auto_import": ("Auto-imported", "#10b981"),
             "auto_clear_stale": ("Auto-cleared stale queue", "#10b981"),
