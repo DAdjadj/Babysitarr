@@ -1016,6 +1016,10 @@ def check_rd_health(state):
         state.setdefault("rd_removed", []).append(p)
         log_action(state, "rd_problem", f"RD torrent {p['status']}: {p['name']}")
 
+    # Only notify when there's something actionable. Orphans without a match
+    # (the "Invalid Magnet / may need to be re-downloaded manually" case) are
+    # silently tracked via strike counter — when they hit RD_ORPHAN_STRIKES,
+    # auto_blocked fires with the real release name from decypharr logs.
     if retried or auto_blocked:
         lines = []
         if retried:
@@ -1037,14 +1041,6 @@ def check_rd_health(state):
             f"RD health: {len(retried)} retried, {len(auto_blocked)} auto-blocked",
             "\n".join(lines),
             level="info" if not retried else "alert",
-        )
-    else:
-        send_notification(
-            f"{len(problems)} RD torrents have issues",
-            f"Real-Debrid reports problems with these torrents but no matching "
-            f"queue items were found in your arrs:\n\n"
-            + "\n".join(f"  - [{p['status']}] {p['name']}" for p in problems[:20])
-            + "\n\nThese may need to be re-downloaded manually."
         )
 
 # ---------------------------------------------------------------------------
