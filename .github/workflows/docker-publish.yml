@@ -1,0 +1,60 @@
+name: Build and push Docker image
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: daalves/babysitarr:latest
+
+      - name: Deploy to server
+        if: github.ref == 'refs/heads/main'
+        run: |
+          # Install cloudflared
+          curl -fsSL https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -o /usr/local/bin/cloudflared
+          chmod +x /usr/local/bin/cloudflared
+
+          # Set up SSH key
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+          # Copy compose file to server (via Cloudflare Tunnel)
+          scp -o StrictHostKeyChecking=no \
+              -o ProxyCommand="cloudflared access ssh --hostname ${{ secrets.DEPLOY_SSH_HOST }}" \
+              -i ~/.ssh/deploy_key \
+              docker-compose.production.yml \
+              ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }}:/opt/docker/babysitarr/docker-compose.yml
+
+          # Pull image and recreate
+          ssh -o StrictHostKeyChecking=no \
+              -o ProxyCommand="cloudflared access ssh --hostname ${{ secrets.DEPLOY_SSH_HOST }}" \
+              -i ~/.ssh/deploy_key \
+              ${{ secrets.DEPLOY_SSH_USER }}@${{ secrets.DEPLOY_SSH_HOST }} \
+              "docker pull daalves/babysitarr:latest && docker compose -f /opt/docker/babysitarr/docker-compose.yml up -d"
+
+          rm -f ~/.ssh/deploy_key
