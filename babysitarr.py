@@ -88,6 +88,10 @@ STUCK_QUEUE_TIMEOUT    = int(os.getenv("STUCK_QUEUE_TIMEOUT", "1800"))    # 30 m
 DEAD_RETRY_LIMIT       = int(os.getenv("DEAD_RETRY_LIMIT", "3"))
 RD_ORPHAN_STRIKES      = int(os.getenv("RD_ORPHAN_STRIKES", "2"))         # strikes before auto-blocking an orphan RD magnet_error
 SYMLINK_LOOP_THRESHOLD = int(os.getenv("SYMLINK_LOOP_THRESHOLD", "10"))    # post-download timeout retries before treating as stuck
+SYMLINK_RD_DELETE_THRESHOLD = int(os.getenv("SYMLINK_RD_DELETE_THRESHOLD", "30"))  # higher count needed to also delete from RD
+SYMLINK_RD_DELETE_MIN_CYCLES = int(os.getenv("SYMLINK_RD_DELETE_MIN_CYCLES", "3"))  # consecutive cycles seeing the timeout before RD delete
+SYMLINK_LOOK_BACK_SEC = int(os.getenv("SYMLINK_LOOK_BACK_SEC", "600"))     # only count timeouts logged within this window
+DISABLE_AUTO_INDEXER_RESET = os.getenv("DISABLE_AUTO_INDEXER_RESET", "").lower() in ("1", "true", "yes")  # issue #1 opt-out
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -544,6 +548,69 @@ _SYMLINK_NAME_RE = re.compile(
     r'timeout waiting for files.*?name=("([^"]+)"|(\S+))',
     re.IGNORECASE,
 )
+_LOG_TS_RE = re.compile(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
+_RD_API_BASE = "https://api.real-debrid.com/rest/1.0"
+DECYPHARR_CONFIG_FILE = os.getenv("DECYPHARR_CONFIG_FILE", "/decypharr-config/config.json")
+
+
+def _decypharr_rd_api_key():
+    """Read the Real-Debrid API key out of the mounted decypharr config."""
+    try:
+        with open(DECYPHARR_CONFIG_FILE) as f:
+            cfg = json.load(f)
+        for d in cfg.get("debrids", []):
+            if d.get("name") == "realdebrid" and d.get("api_key"):
+                return d["api_key"]
+    except Exception as e:
+        log.warning(f"Could not read decypharr config for RD api key: {e}")
+    return None
+
+
+def _rd_find_torrent_id(api_key, target_name):
+    """Find a torrent in RD whose filename matches target_name AND is downloaded.
+    Returns the torrent id, or None if not found / ambiguous."""
+    try:
+        r = requests.get(
+            f"{_RD_API_BASE}/torrents",
+            headers={"Authorization": f"Bearer {api_key}"},
+            params={"limit": 200},
+            timeout=15,
+        )
+        if not r.ok:
+            log.warning(f"RD list torrents failed: HTTP {r.status_code}")
+            return None
+        torrents = r.json()
+    except Exception as e:
+        log.warning(f"RD list torrents error: {e}")
+        return None
+
+    target_base = target_name.rsplit(".", 1)[0].strip().lower()
+    matches = [
+        t for t in torrents
+        if t.get("status") == "downloaded"
+        and t.get("filename", "").rsplit(".", 1)[0].strip().lower() == target_base
+    ]
+    if len(matches) != 1:
+        # 0 = nothing to delete; >1 = ambiguous, refuse to act
+        if len(matches) > 1:
+            log.warning(f"RD lookup for {target_name!r} matched {len(matches)} torrents; refusing to delete (ambiguous)")
+        return None
+    return matches[0]["id"]
+
+
+def _rd_delete_torrent(api_key, torrent_id):
+    """DELETE a torrent from Real-Debrid by id. Returns True on success."""
+    try:
+        r = requests.delete(
+            f"{_RD_API_BASE}/torrents/delete/{torrent_id}",
+            headers={"Authorization": f"Bearer {api_key}"},
+            timeout=15,
+        )
+        return r.status_code in (200, 204)
+    except Exception as e:
+        log.warning(f"RD delete {torrent_id} error: {e}")
+        return False
+
 
 def check_symlink_loops(state):
     """Detect torrents stuck in a post-download symlink retry loop.
@@ -554,6 +621,14 @@ def check_symlink_loops(state):
     decypharr asks for) doesn't match the folder zurg exposes (e.g. UIndex.org
     uploads with prefixed wrapper folders). Left unchecked, the loop pins CPU
     and accumulates thousands of threads.
+
+    Two action tiers, both with strict false-positive guards:
+      - SYMLINK_LOOP_THRESHOLD timeouts (default 10): scrub torrents.json,
+        blocklist in arr queues, restart decypharr.
+      - SYMLINK_RD_DELETE_THRESHOLD timeouts (default 30) AND seen in
+        SYMLINK_RD_DELETE_MIN_CYCLES consecutive cycles AND found in RD with
+        status="downloaded": also delete from Real-Debrid so decypharr can't
+        re-discover it on the next sync.
     """
     if not os.path.exists(DECYPHARR_LOG_FILE):
         return
@@ -570,10 +645,22 @@ def check_symlink_loops(state):
         log.warning(f"Could not read decypharr log for symlink loop check: {e}")
         return
 
+    cutoff = datetime.now() - timedelta(seconds=SYMLINK_LOOK_BACK_SEC)
     for line in tail.split("\n"):
         if "timeout waiting for files" not in line:
             continue
         plain = _ANSI_RE.sub("", line)
+        # Filter to entries within the look-back window — guards against
+        # counting old timeouts that have already been resolved.
+        ts_m = _LOG_TS_RE.match(plain)
+        if not ts_m:
+            continue
+        try:
+            ts = datetime.strptime(ts_m.group(1), "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        if ts < cutoff:
+            continue
         m = _SYMLINK_NAME_RE.search(plain)
         if not m:
             continue
@@ -581,12 +668,15 @@ def check_symlink_loops(state):
         if name:
             cycle_counts[name] = cycle_counts.get(name, 0) + 1
 
-    sym_counts = state.get("symlink_loop_counts", {})
-    # Decay names that no longer appear in the recent window
-    sym_counts = {n: c for n, c in sym_counts.items() if n in cycle_counts}
+    # Drop names that didn't appear in the recent window — if decypharr
+    # stopped logging timeouts for a name, the issue resolved itself.
+    sym_counts = {n: c for n, c in state.get("symlink_loop_counts", {}).items() if n in cycle_counts}
+    sym_streak = {n: c for n, c in state.get("symlink_loop_streak", {}).items() if n in cycle_counts}
     for n, c in cycle_counts.items():
         sym_counts[n] = sym_counts.get(n, 0) + c
+        sym_streak[n] = sym_streak.get(n, 0) + 1
     state["symlink_loop_counts"] = sym_counts
+    state["symlink_loop_streak"] = sym_streak
 
     over = {n: c for n, c in sym_counts.items() if c >= SYMLINK_LOOP_THRESHOLD}
     if not over:
@@ -635,27 +725,55 @@ def check_symlink_loops(state):
                                    f"Blocklisted symlink-loop torrent in {arr_name}: {title[:80]}")
                         handled.add(stuck_name)
 
+    # 3. Real-Debrid delete — only for items that have crossed the higher
+    # threshold AND been seen in multiple consecutive cycles. This is the
+    # durable fix that prevents decypharr from re-discovering them on restart.
+    rd_deleted = set()
+    rd_candidates = {
+        n: c for n, c in over.items()
+        if c >= SYMLINK_RD_DELETE_THRESHOLD
+        and sym_streak.get(n, 0) >= SYMLINK_RD_DELETE_MIN_CYCLES
+    }
+    if rd_candidates:
+        rd_key = _decypharr_rd_api_key()
+        if not rd_key:
+            log.warning("Skipping RD delete: no api key available from decypharr config")
+        else:
+            for stuck_name, count in rd_candidates.items():
+                rd_id = _rd_find_torrent_id(rd_key, stuck_name)
+                if not rd_id:
+                    # Either not in RD (nothing to delete) or ambiguous (refused).
+                    # Either way, mark handled so we don't keep trying every cycle.
+                    handled.add(stuck_name)
+                    continue
+                if _rd_delete_torrent(rd_key, rd_id):
+                    rd_deleted.add(stuck_name)
+                    handled.add(stuck_name)
+                    log_action(state, "rd_delete_symlink_loop",
+                               f"Deleted from Real-Debrid: {stuck_name} ({count} timeouts across {sym_streak[stuck_name]} cycles, RD id {rd_id})")
+
     if not handled:
         return
 
-    # 3. Restart decypharr to clear thread accumulation and the retry loop.
+    # 4. Restart decypharr to clear thread accumulation and the retry loop.
     # Best-effort: if decypharr is stopped, this fails silently and cleanup still stands.
     if docker_restart("decypharr"):
         log_action(state, "restart",
                    f"Restarted decypharr after clearing {len(handled)} symlink-loop torrents")
         time.sleep(10)
 
-    # Drop handled names from the persistent counter
+    # Drop handled names from the persistent counters
     for n in handled:
         sym_counts.pop(n, None)
+        sym_streak.pop(n, None)
     state["symlink_loop_counts"] = sym_counts
+    state["symlink_loop_streak"] = sym_streak
 
-    send_notification(
-        "Symlink retry loops cleared",
-        f"Cleared {len(handled)} torrents stuck in decypharr symlink-retry loop:\n\n" +
-        "\n".join(f"  • {n}" for n in handled),
-        level="info",
-    )
+    body_lines = [f"Cleared {len(handled)} torrent(s) stuck in decypharr symlink-retry loop:"]
+    for n in handled:
+        suffix = " — also deleted from Real-Debrid" if n in rd_deleted else ""
+        body_lines.append(f"  • {n}{suffix}")
+    send_notification("Symlink retry loops cleared", "\n".join(body_lines), level="info")
 
 # ---------------------------------------------------------------------------
 # Check 3: Stalled arr imports
@@ -1514,11 +1632,13 @@ def check_stuck_queue_items(state):
             key = f"{arr_name}:{qid}"
             seen_keys.add(key)
 
-            # Only care about stuck items: delay status, or downloading with no progress
+            # Only care about stuck items: delay status, downloading with no progress,
+            # or completed-but-stuck-importing (issue #2)
             is_delay = status == "delay"
             is_downloading = dl_state == "downloading"
+            is_importing = status == "completed" and dl_state == "importing"
 
-            if not is_delay and not is_downloading:
+            if not is_delay and not is_downloading and not is_importing:
                 stuck_tracking.pop(key, None)
                 continue
 
@@ -1697,7 +1817,16 @@ def check_indexer_health(state):
     Indexer failures come from Prowlarr, so we reset Prowlarr first (once),
     then reset each affected arr to clear its cached failure state.
     30-min cooldown per container to avoid restart loops.
+
+    The reset itself is a container restart (the only reliable way to clear
+    cached failure state in Sonarr/Radarr/Prowlarr). On debrid setups where
+    indexer failures are frequent and transient, the periodic restarts may
+    be more disruptive than the failures themselves — set
+    DISABLE_AUTO_INDEXER_RESET=true to skip the auto-reset and only handle
+    indexer failures via the dashboard's manual button (issue #1).
     """
+    if DISABLE_AUTO_INDEXER_RESET:
+        return
     reset_times = state.setdefault("indexer_reset_times", {})
     now = time.time()
 
