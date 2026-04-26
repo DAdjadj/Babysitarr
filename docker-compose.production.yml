@@ -1,0 +1,39 @@
+services:
+  babysitarr:
+    image: daalves/babysitarr:latest
+    container_name: babysitarr
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+      # Decypharr config (for stuck download detection)
+      - /opt/docker/decypharr/config:/decypharr-config
+      # Download directories (read-only)
+      - /media/_decypharr-downloads:/downloads:ro
+      # Arr config directories (mounted at ARR_CONFIG_DIR/<name>)
+      - /opt/docker/radarr/config:/arr-configs/radarr
+      - /opt/docker/radarr4k/config:/arr-configs/radarr4k
+      - /opt/docker/sonarr/config:/arr-configs/sonarr
+      - /opt/docker/sonarr4k/config:/arr-configs/sonarr4k
+      - /opt/docker/prowlarr/config:/arr-configs/prowlarr
+    ports:
+      - "8284:8284"
+    networks:
+      media:
+        ipv4_address: 172.18.0.40
+
+  watchtower:
+    image: nickfedor/watchtower
+    container_name: babysitarr-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --cleanup --interval 86400 babysitarr
+    environment:
+      - WATCHTOWER_LOG_LEVEL=warn
+
+networks:
+  media:
+    external: true
