@@ -96,8 +96,8 @@ DISABLE_AUTO_INDEXER_RESET = os.getenv("DISABLE_AUTO_INDEXER_RESET", "").lower()
 # Decypharr v2.x runtime API (v2.x persists state in BoltDB, not torrents.json)
 DECYPHARR_API_LIMIT     = int(os.getenv("DECYPHARR_API_LIMIT", "1000"))
 ORPHAN_TIMEOUT_SEC      = int(os.getenv("ORPHAN_TIMEOUT_SEC", "1800"))     # decypharr torrent stuck w/o matching arr queue
-HOST_LOAD_THRESHOLD     = float(os.getenv("HOST_LOAD_THRESHOLD", "50"))    # 1-min loadavg above this = alert
-HOST_DSTATE_THRESHOLD   = int(os.getenv("HOST_DSTATE_THRESHOLD", "3"))     # D-state procs above this = alert
+HOST_LOAD_THRESHOLD     = float(os.getenv("HOST_LOAD_THRESHOLD", "200"))   # 1-min loadavg above this = alert (set high; decypharr/rclone/arrs run loadavg 50-150 normally)
+HOST_DSTATE_THRESHOLD   = int(os.getenv("HOST_DSTATE_THRESHOLD", "3"))     # D-state procs above this = alert (the real wedge canary)
 HOST_HEALTH_COOLDOWN    = int(os.getenv("HOST_HEALTH_COOLDOWN", "1800"))   # min seconds between host-health alerts
 EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "v2.1")      # alert if decypharr image tag drifts from this
 
