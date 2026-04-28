@@ -100,6 +100,9 @@ HOST_LOAD_THRESHOLD     = float(os.getenv("HOST_LOAD_THRESHOLD", "200"))   # 1-m
 HOST_DSTATE_THRESHOLD   = int(os.getenv("HOST_DSTATE_THRESHOLD", "3"))     # D-state procs above this = alert (the real wedge canary)
 HOST_HEALTH_COOLDOWN    = int(os.getenv("HOST_HEALTH_COOLDOWN", "1800"))   # min seconds between host-health alerts
 EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "v2.1")      # alert if decypharr image tag drifts from this
+DECYPHARR_CPU_WATCHDOG_THRESHOLD = float(os.getenv("DECYPHARR_CPU_WATCHDOG_THRESHOLD", "80"))  # CPU% for decypharr container
+DECYPHARR_CPU_WATCHDOG_CYCLES    = int(os.getenv("DECYPHARR_CPU_WATCHDOG_CYCLES", "3"))         # consecutive over-threshold cycles before restart
+DECYPHARR_CPU_WATCHDOG_COOLDOWN  = int(os.getenv("DECYPHARR_CPU_WATCHDOG_COOLDOWN", "3600"))    # min seconds between watchdog restarts
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -2863,6 +2866,140 @@ def check_decypharr_version(state):
     )
 
 # ---------------------------------------------------------------------------
+# Decypharr CPU watchdog (auto-restart on sustained high CPU)
+# ---------------------------------------------------------------------------
+def _docker_container_cpu_percent(name):
+    """Single CPU% sample for a container via Docker stats API.
+
+    Returns float (0.0-N00.0 where N is core count) or None on error.
+    Reads the unix socket directly with proper full-body reading because the
+    /containers/X/stats response is multi-KB and the lightweight _docker_api
+    helper truncates at 4096 bytes.
+    """
+    import socket as _socket
+    try:
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.settimeout(15)
+        sock.connect("/var/run/docker.sock")
+        sock.sendall((f"GET /containers/{name}/stats?stream=false HTTP/1.1\r\n"
+                      f"Host: localhost\r\nConnection: close\r\n\r\n").encode())
+        chunks = []
+        while True:
+            c = sock.recv(8192)
+            if not c:
+                break
+            chunks.append(c)
+            if sum(len(x) for x in chunks) > 200000:
+                break
+        sock.close()
+    except Exception as e:
+        log.debug(f"Container stats fetch failed for {name}: {e}")
+        return None
+
+    raw = b"".join(chunks).decode("utf-8", errors="replace")
+    body_start = raw.find("\r\n\r\n")
+    if body_start < 0:
+        return None
+    body = raw[body_start + 4:].lstrip()
+    json_start = body.find("{")
+    if json_start < 0:
+        return None
+    # Find balanced JSON object (skips chunked-encoding line lengths if present)
+    depth = 0
+    end = -1
+    for i, ch in enumerate(body[json_start:]):
+        if ch == "{":
+            depth += 1
+        elif ch == "}":
+            depth -= 1
+            if depth == 0:
+                end = json_start + i + 1
+                break
+    if end < 0:
+        return None
+    try:
+        data = json.loads(body[json_start:end])
+    except Exception as e:
+        log.debug(f"Container stats JSON parse failed for {name}: {e}")
+        return None
+
+    cpu = data.get("cpu_stats", {})
+    pre = data.get("precpu_stats", {})
+    cu = cpu.get("cpu_usage", {}).get("total_usage", 0)
+    pu = pre.get("cpu_usage", {}).get("total_usage", 0)
+    sc = cpu.get("system_cpu_usage", 0)
+    ps = pre.get("system_cpu_usage", 0)
+    online = cpu.get("online_cpus") or len(cpu.get("cpu_usage", {}).get("percpu_usage", []) or []) or 1
+
+    cpu_delta = cu - pu
+    system_delta = sc - ps
+    if system_delta <= 0 or cpu_delta < 0:
+        return 0.0
+    return (cpu_delta / system_delta) * online * 100.0
+
+
+def check_decypharr_cpu_watchdog(state):
+    """Auto-restart decypharr if its CPU stays above DECYPHARR_CPU_WATCHDOG_THRESHOLD
+    for DECYPHARR_CPU_WATCHDOG_CYCLES consecutive cycles.
+
+    Decypharr v2.x's DFS-stack background workers and ffprobe subprocesses are
+    known to leak goroutines / stick around after errors, accumulating CPU
+    usage even when the queue is empty. A simple `docker restart` clears the
+    runtime state instantly. Cooldown prevents restart loops if something
+    else is broken post-restart.
+
+    Today's incident: 120-150% CPU sustained for ~5.5h with empty DB/no logs;
+    restart dropped it to 0.3%.
+    """
+    cpu = _docker_container_cpu_percent("decypharr")
+    if cpu is None:
+        return
+
+    if cpu > DECYPHARR_CPU_WATCHDOG_THRESHOLD:
+        state["decypharr_cpu_high_streak"] = state.get("decypharr_cpu_high_streak", 0) + 1
+    else:
+        # CPU dropped below threshold — reset the streak so we only act on
+        # SUSTAINED high CPU, not transient spikes during a real workload.
+        if state.get("decypharr_cpu_high_streak"):
+            state.pop("decypharr_cpu_high_streak", None)
+        return
+
+    streak = state["decypharr_cpu_high_streak"]
+    if streak < DECYPHARR_CPU_WATCHDOG_CYCLES:
+        log.info(f"Decypharr CPU at {cpu:.1f}% (streak {streak}/{DECYPHARR_CPU_WATCHDOG_CYCLES})")
+        return
+
+    last_restart = state.get("decypharr_cpu_watchdog_last_restart", 0)
+    now = time.time()
+    if now - last_restart < DECYPHARR_CPU_WATCHDOG_COOLDOWN:
+        log.warning(f"Decypharr CPU still elevated ({cpu:.1f}%) but watchdog "
+                    f"in cooldown ({int((now - last_restart) / 60)}min ago); skipping")
+        return
+
+    log.warning(f"Decypharr CPU watchdog firing: {cpu:.1f}% sustained for "
+                f"{streak} cycles, restarting decypharr")
+    if docker_restart("decypharr"):
+        state["decypharr_cpu_watchdog_last_restart"] = now
+        state["decypharr_cpu_high_streak"] = 0
+        log_action(state, "decypharr_cpu_restart",
+                   f"Auto-restarted decypharr after {cpu:.1f}% CPU sustained "
+                   f"{streak} cycles ({streak * CHECK_INTERVAL // 60}min)")
+        send_notification(
+            "Decypharr CPU watchdog: auto-restarted",
+            f"Babysitarr auto-restarted decypharr because it was sustained at "
+            f"{cpu:.1f}% CPU across {streak} consecutive check cycles "
+            f"({streak * CHECK_INTERVAL // 60}min).\n\n"
+            f"Likely cause: leaked goroutines and/or stuck ffprobe processes "
+            f"(known v2.x quirk — DFS-stack background workers don't always "
+            f"clean up after errors).\n\n"
+            f"If this happens often, consider filing a bug at "
+            f"https://github.com/sirrobot01/decypharr/issues with a goroutine "
+            f"dump from /debug/pprof.\n\n"
+            f"Cooldown: next watchdog restart in {DECYPHARR_CPU_WATCHDOG_COOLDOWN // 60}min.",
+            level="info"
+        )
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 def main():
@@ -2904,6 +3041,11 @@ def main():
             check_decypharr_version(state)
         except Exception as e:
             log.error(f"check_decypharr_version failed: {e}")
+
+        try:
+            check_decypharr_cpu_watchdog(state)
+        except Exception as e:
+            log.error(f"check_decypharr_cpu_watchdog failed: {e}")
 
         try:
             check_stuck_downloads(state)
