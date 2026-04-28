@@ -93,6 +93,14 @@ SYMLINK_RD_DELETE_MIN_CYCLES = int(os.getenv("SYMLINK_RD_DELETE_MIN_CYCLES", "3"
 SYMLINK_LOOK_BACK_SEC = int(os.getenv("SYMLINK_LOOK_BACK_SEC", "600"))     # only count timeouts logged within this window
 DISABLE_AUTO_INDEXER_RESET = os.getenv("DISABLE_AUTO_INDEXER_RESET", "").lower() in ("1", "true", "yes")  # issue #1 opt-out
 
+# Decypharr v2.x runtime API (v2.x persists state in BoltDB, not torrents.json)
+DECYPHARR_API_LIMIT     = int(os.getenv("DECYPHARR_API_LIMIT", "1000"))
+ORPHAN_TIMEOUT_SEC      = int(os.getenv("ORPHAN_TIMEOUT_SEC", "1800"))     # decypharr torrent stuck w/o matching arr queue
+HOST_LOAD_THRESHOLD     = float(os.getenv("HOST_LOAD_THRESHOLD", "50"))    # 1-min loadavg above this = alert
+HOST_DSTATE_THRESHOLD   = int(os.getenv("HOST_DSTATE_THRESHOLD", "3"))     # D-state procs above this = alert
+HOST_HEALTH_COOLDOWN    = int(os.getenv("HOST_HEALTH_COOLDOWN", "1800"))   # min seconds between host-health alerts
+EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "v2.1")      # alert if decypharr image tag drifts from this
+
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -423,51 +431,105 @@ def _reset_arr_db(arr_name):
 # ---------------------------------------------------------------------------
 # Check 1: Stuck downloads in decypharr
 # ---------------------------------------------------------------------------
-def check_stuck_downloads(state):
-    """Find downloads stuck in 'downloading' state for too long."""
-    if not os.path.exists(DECYPHARR_STATE):
-        return
+def _decypharr_get_torrents():
+    """Query decypharr's runtime REST API for current torrents.
+
+    Decypharr v2.x persists state in BoltDB (config/db/*.db), NOT in torrents.json
+    — that file is a v1.x leftover. The runtime API is the only reliable source
+    of truth for v2.x.
+
+    Returns a list of dicts. Useful keys: info_hash, name, state, status,
+    added_on (ISO 8601 string), action, category. Empty list on failure.
+    """
     try:
-        with open(DECYPHARR_STATE) as f:
-            torrents = json.load(f)
-    except Exception:
+        r = requests.get(f"{DECYPHARR_URL}/api/torrents",
+                         params={"limit": DECYPHARR_API_LIMIT}, timeout=15)
+        if r.ok:
+            return r.json().get("torrents", []) or []
+        log.warning(f"decypharr /api/torrents returned HTTP {r.status_code}")
+    except Exception as e:
+        log.warning(f"Could not fetch decypharr torrents: {e}")
+    return []
+
+
+def _decypharr_delete_torrent(hash_val):
+    """Delete a torrent from decypharr by info_hash.
+
+    Uses the working endpoint pattern: DELETE /api/torrents?hashes=H (query string,
+    not body). The qbittorrent-mock /api/v2/torrents/delete returns 200 but does
+    NOT actually persist a delete in v2.x. This is the API that does.
+    """
+    if not hash_val:
+        return False
+    try:
+        r = requests.delete(f"{DECYPHARR_URL}/api/torrents",
+                            params={"hashes": hash_val}, timeout=15)
+        return r.ok
+    except Exception as e:
+        log.warning(f"Decypharr delete failed for {hash_val[:10]}: {e}")
+        return False
+
+
+def _parse_iso_ts(s):
+    """Parse decypharr's ISO 8601 timestamps. Returns epoch seconds or None."""
+    if not s:
+        return None
+    try:
+        # Handle trailing 'Z' (UTC)
+        return datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp()
+    except (ValueError, AttributeError, TypeError):
+        return None
+
+
+def check_stuck_downloads(state):
+    """Find decypharr torrents that finished downloading on RD but never completed
+    their post-download action (symlink) past STUCK_DOWNLOAD_TIMEOUT.
+
+    Indicator: state='downloading' AND status='downloaded' AND added_on age >
+    threshold. The state stays 'downloading' until decypharr finishes the
+    symlink step, so a stale entry here means the symlink never landed.
+
+    Reads from the v2.x runtime API. The previous v1.x torrents.json path is
+    abandoned (not written by decypharr v2.x).
+    """
+    torrents = _decypharr_get_torrents()
+    if not torrents:
         return
 
     now = time.time()
     stuck = []
-    for key, t in torrents.items():
-        if t.get("state") == "downloading":
-            added = t.get("added_on", now)
-            age = now - added
-            if age > STUCK_DOWNLOAD_TIMEOUT:
-                stuck.append({
-                    "hash": t.get("hash", key),
-                    "name": t.get("name", "unknown"),
-                    "age_min": int(age / 60),
-                    "category": t.get("category", ""),
-                })
+    for t in torrents:
+        if t.get("state") != "downloading":
+            continue
+        # Only consider items where RD already has the file — these are
+        # post-download stalls, not in-flight downloads.
+        if t.get("status") != "downloaded":
+            continue
+        added = _parse_iso_ts(t.get("added_on"))
+        if added is None:
+            continue
+        age = now - added
+        if age <= STUCK_DOWNLOAD_TIMEOUT:
+            continue
+        stuck.append({
+            "hash": t.get("info_hash", ""),
+            "name": t.get("name", "unknown"),
+            "age_min": int(age / 60),
+            "category": t.get("category", ""),
+        })
 
     if not stuck:
         return
 
     log.warning(f"Found {len(stuck)} stuck downloads in decypharr (>{STUCK_DOWNLOAD_TIMEOUT}s old)")
 
-    # Remove stuck items from torrents.json
-    modified = False
+    cleared = 0
     for s in stuck:
-        for key in list(torrents.keys()):
-            if torrents[key].get("state") == "downloading" and torrents[key].get("hash") == s["hash"]:
-                del torrents[key]
-                modified = True
-                log_action(state, "clear_stuck", f"Removed stuck download: {s['name']} (stuck {s['age_min']}min)")
-
-    if modified:
-        with open(DECYPHARR_STATE, "w") as f:
-            json.dump(torrents, f, indent=2)
-        # Restart decypharr
-        if docker_restart("decypharr"):
-            log_action(state, "restart", "Restarted decypharr after clearing stuck downloads")
-        time.sleep(10)  # Give it time to start
+        if _decypharr_delete_torrent(s["hash"]):
+            cleared += 1
+            log_action(state, "clear_stuck",
+                       f"Removed stuck download: {s['name']} (stuck {s['age_min']}min)")
+    # No decypharr restart needed — DELETE /api/torrents is persistent in v2.x.
 
 # ---------------------------------------------------------------------------
 # Check 2: Looping torrents (submit → delete → retry)
@@ -2580,6 +2642,227 @@ signal.signal(signal.SIGTERM, _signal_handler)
 signal.signal(signal.SIGINT, _signal_handler)
 
 # ---------------------------------------------------------------------------
+# Decypharr orphan detection (v2.x runtime-API based)
+# ---------------------------------------------------------------------------
+def check_decypharr_orphans(state):
+    """Detect decypharr torrents that have been waiting on a symlink for a long
+    time AND are no longer tracked by any *arr — i.e. truly orphaned.
+
+    Pattern: state='downloading', status='downloaded', action='symlink', age >
+    ORPHAN_TIMEOUT_SEC, and no matching title in any *arr's queue. The *arr has
+    moved on (failed, removed, or never tracked), but decypharr keeps polling
+    these forever. On v2.2 this caused the FUSE wedge incident; on v2.1 it
+    causes silent background load creep.
+
+    The *arr-queue check is the safety guard: if the *arr is still tracking
+    this torrent, we leave it alone so Babysitarr's other checks (looping
+    torrents, stuck queue items) handle it through the *arr side instead.
+    """
+    torrents = _decypharr_get_torrents()
+    if not torrents:
+        return
+
+    now = time.time()
+    candidates = []
+    for t in torrents:
+        if t.get("state") != "downloading":
+            continue
+        if t.get("status") != "downloaded":
+            continue
+        if t.get("action") != "symlink":
+            continue
+        added = _parse_iso_ts(t.get("added_on"))
+        if added is None or now - added <= ORPHAN_TIMEOUT_SEC:
+            continue
+        candidates.append({
+            "hash": t.get("info_hash", ""),
+            "name": (t.get("name") or "").strip(),
+            "age_min": int((now - added) / 60),
+        })
+
+    if not candidates:
+        return
+
+    # Build a set of titles currently tracked by any *arr
+    arr_titles = set()
+    for arr_name in ARRS:
+        q = arr_get_queue(arr_name)
+        if not q:
+            continue
+        for r in q.get("records", []):
+            title = (r.get("title") or "").strip().lower()
+            if title:
+                arr_titles.add(title)
+
+    orphans = []
+    for c in candidates:
+        cname = c["name"].lower()
+        cbase = cname.rsplit(".", 1)[0]
+        # Forgiving match: orphan only if NO *arr title contains the basename
+        in_arr = any(cbase and cbase in t for t in arr_titles) or cname in arr_titles
+        if not in_arr:
+            orphans.append(c)
+
+    if not orphans:
+        return
+
+    log.warning(f"Found {len(orphans)} orphaned decypharr torrents "
+                f"(stuck >{ORPHAN_TIMEOUT_SEC // 60}min, no matching arr queue entry)")
+
+    cleared = []
+    for o in orphans:
+        if _decypharr_delete_torrent(o["hash"]):
+            cleared.append(o)
+            log_action(state, "clear_decypharr_orphan",
+                       f"Removed orphan from decypharr: {o['name']} "
+                       f"(stuck {o['age_min']}min, not in any arr queue)")
+
+    if cleared:
+        body = [f"Cleared {len(cleared)} orphaned torrent(s) from decypharr:"]
+        for o in cleared:
+            body.append(f"  • {o['name']} (stuck {o['age_min']}min)")
+        body.append("")
+        body.append("These were polling silently in decypharr's DB but no longer")
+        body.append("tracked by Sonarr/Radarr. Left alone they cause background")
+        body.append("load creep (and on decypharr v2.2, FUSE wedge).")
+        send_notification("Decypharr orphans cleared", "\n".join(body), level="info")
+
+# ---------------------------------------------------------------------------
+# Host health monitoring (alert-only)
+# ---------------------------------------------------------------------------
+def check_host_health(state):
+    """Monitor host load average and D-state process count.
+
+    Linux containers share the host kernel; /proc inside the container reflects
+    host-wide stats, so we can read /proc/loadavg and /proc/<pid>/status without
+    needing extra mounts.
+
+    Alerts only — recovery from a FUSE wedge requires sudo (fusermount -uz)
+    and is too risky to automate. The alert tells the user exactly what to do.
+    """
+    try:
+        with open("/proc/loadavg") as f:
+            load_1min = float(f.read().split()[0])
+    except Exception as e:
+        log.debug(f"Could not read /proc/loadavg: {e}")
+        return
+
+    d_count = 0
+    try:
+        for pid in os.listdir("/proc"):
+            if not pid.isdigit():
+                continue
+            try:
+                with open(f"/proc/{pid}/status") as f:
+                    for line in f:
+                        if line.startswith("State:"):
+                            # State line: "State:\tD (disk sleep)" or "State:\tR (running)" etc.
+                            if "\tD" in line or " D " in line:
+                                d_count += 1
+                            break
+            except (FileNotFoundError, ProcessLookupError, PermissionError, OSError):
+                continue
+    except Exception as e:
+        log.debug(f"Could not enumerate /proc for D-state: {e}")
+        return
+
+    high_load = load_1min > HOST_LOAD_THRESHOLD
+    high_dstate = d_count > HOST_DSTATE_THRESHOLD
+
+    if not (high_load or high_dstate):
+        # Healthy — clear any prior alert state so the next problem alerts immediately
+        state.pop("host_health_last_alert", None)
+        return
+
+    last_alert = state.get("host_health_last_alert", 0)
+    now = time.time()
+    if now - last_alert < HOST_HEALTH_COOLDOWN:
+        return
+    state["host_health_last_alert"] = now
+
+    reasons = []
+    if high_load:
+        reasons.append(f"load_1min={load_1min:.1f} (>{HOST_LOAD_THRESHOLD})")
+    if high_dstate:
+        reasons.append(f"D-state={d_count} (>{HOST_DSTATE_THRESHOLD})")
+
+    log.error(f"Host health alert: {', '.join(reasons)}")
+    log_action(state, "host_health_alert", f"Host elevated: {', '.join(reasons)}")
+
+    body = (
+        f"Host health alert on the box running babysitarr.\n\n"
+        f"  - 1-min load avg: {load_1min:.2f}\n"
+        f"  - D-state (uninterruptible) processes: {d_count}\n\n"
+        f"This pattern matches the FUSE wedge failure mode "
+        f"(decypharr/rclone-zurg). If load keeps climbing or D-state stays "
+        f"high, the rclone mount is likely deadlocked.\n\n"
+        f"Manual recovery (in order, stop when load drops):\n"
+        f"  1. ssh to the host\n"
+        f"  2. sudo fusermount -uz /media/library/zurg   (no password)\n"
+        f"  3. docker kill plex && docker start plex\n"
+        f"  4. sudo systemctl restart rclone-zurg.service (needs password)\n\n"
+        f"If multiple steps fail: full reboot.\n\n"
+        f"Cooldown: next host-health alert in {HOST_HEALTH_COOLDOWN // 60}min."
+    )
+    send_notification("Host health alert (load / D-state)", body, level="alert")
+
+# ---------------------------------------------------------------------------
+# Decypharr version drift detection
+# ---------------------------------------------------------------------------
+def check_decypharr_version(state):
+    """Alert if decypharr's running version has drifted from EXPECTED_DECYPHARR_TAG.
+
+    We pin to v2.1 because v2.2+ regressed FUSE handling and wedges the box on
+    symlink-loop torrents. The watchtower-skip label should prevent auto-update,
+    but this is belt-and-suspenders in case the systemd unit is edited or
+    watchtower config changes.
+
+    Reads decypharr's own GET /version endpoint, which returns
+    {"version": "2.1", "channel": "stable"} — far cleaner than docker socket
+    inspection. Both 'v2.1' and '2.1' formats accepted in EXPECTED_DECYPHARR_TAG.
+
+    Empty EXPECTED_DECYPHARR_TAG disables this check.
+    """
+    if not EXPECTED_DECYPHARR_TAG:
+        return
+    try:
+        r = requests.get(f"{DECYPHARR_URL}/version", timeout=10)
+        if not r.ok:
+            return
+        running = (r.json().get("version") or "").strip()
+    except Exception as e:
+        log.debug(f"check_decypharr_version fetch failed: {e}")
+        return
+    if not running:
+        return
+
+    expected = EXPECTED_DECYPHARR_TAG.lstrip("v").strip()
+    if running == expected:
+        state.pop("decypharr_version_last_alert", None)
+        return
+
+    last_alert = state.get("decypharr_version_last_alert", 0)
+    now = time.time()
+    if now - last_alert < HOST_HEALTH_COOLDOWN:
+        return
+    state["decypharr_version_last_alert"] = now
+
+    log.error(f"Decypharr version drift: running '{running}', expected '{expected}'")
+    log_action(state, "decypharr_version_drift",
+               f"Running {running}, expected {expected}")
+    send_notification(
+        "Decypharr version drift",
+        f"Decypharr is running version '{running}', but EXPECTED_DECYPHARR_TAG="
+        f"'{EXPECTED_DECYPHARR_TAG}'.\n\n"
+        f"v2.2+ has a known FUSE-handling regression that wedges the box. "
+        f"Pin back to v2.1 in the systemd unit:\n"
+        f"  /etc/systemd/system/decypharr.service\n"
+        f"  ExecStart=/usr/bin/docker run ... ghcr.io/sirrobot01/decypharr:v2.1\n"
+        f"Then: sudo systemctl daemon-reload && sudo systemctl restart decypharr",
+        level="alert"
+    )
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 def main():
@@ -2613,9 +2896,24 @@ def main():
             log.error(f"check_container_health failed: {e}")
 
         try:
+            check_host_health(state)
+        except Exception as e:
+            log.error(f"check_host_health failed: {e}")
+
+        try:
+            check_decypharr_version(state)
+        except Exception as e:
+            log.error(f"check_decypharr_version failed: {e}")
+
+        try:
             check_stuck_downloads(state)
         except Exception as e:
             log.error(f"check_stuck_downloads failed: {e}")
+
+        try:
+            check_decypharr_orphans(state)
+        except Exception as e:
+            log.error(f"check_decypharr_orphans failed: {e}")
 
         try:
             check_looping_torrents(state)
