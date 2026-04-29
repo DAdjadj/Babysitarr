@@ -2938,6 +2938,156 @@ def _docker_container_cpu_percent(name):
     return (cpu_delta / system_delta) * online * 100.0
 
 
+def _docker_exec(container, cmd):
+    """Run a command inside `container` via the Docker exec API on the unix
+    socket. Returns combined stdout+stderr as a string, or None on error.
+
+    Uses Tty=true so the response is raw bytes (no per-frame stream-type
+    multiplexing). Suitable for diagnostic captures where we don't need to
+    distinguish stdout from stderr.
+    """
+    import socket as _socket
+    try:
+        # Step 1: create the exec instance.
+        # Connection: close tells docker to close the socket after responding,
+        # so our recv loop terminates without waiting for timeout.
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.settimeout(30)
+        sock.connect("/var/run/docker.sock")
+        body = json.dumps({
+            "Cmd": cmd,
+            "AttachStdout": True,
+            "AttachStderr": True,
+            "Tty": True,
+        })
+        req = (f"POST /containers/{container}/exec HTTP/1.1\r\n"
+               f"Host: localhost\r\nContent-Type: application/json\r\n"
+               f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}")
+        sock.sendall(req.encode())
+        chunks = []
+        try:
+            while True:
+                c = sock.recv(8192)
+                if not c:
+                    break
+                chunks.append(c)
+                if sum(len(x) for x in chunks) > 16384:
+                    break
+        except _socket.timeout:
+            pass
+        sock.close()
+        resp = b"".join(chunks).decode("utf-8", errors="replace")
+        m = re.search(r'"Id"\s*:\s*"([0-9a-f]+)"', resp)
+        if not m:
+            log.debug(f"_docker_exec: no exec id in response: {resp[:200]}")
+            return None
+        exec_id = m.group(1)
+
+        # Step 2: start the exec instance and read output
+        sock = _socket.socket(_socket.AF_UNIX, _socket.SOCK_STREAM)
+        sock.settimeout(60)
+        sock.connect("/var/run/docker.sock")
+        body = json.dumps({"Detach": False, "Tty": True})
+        req = (f"POST /exec/{exec_id}/start HTTP/1.1\r\n"
+               f"Host: localhost\r\nContent-Type: application/json\r\n"
+               f"Content-Length: {len(body)}\r\nConnection: close\r\n\r\n{body}")
+        sock.sendall(req.encode())
+        chunks = []
+        try:
+            while True:
+                c = sock.recv(65536)
+                if not c:
+                    break
+                chunks.append(c)
+                if sum(len(x) for x in chunks) > 5_000_000:
+                    break
+        except _socket.timeout:
+            pass
+        sock.close()
+        full = b"".join(chunks).decode("utf-8", errors="replace")
+        # Strip HTTP headers
+        body_idx = full.find("\r\n\r\n")
+        return full[body_idx + 4:] if body_idx >= 0 else full
+    except Exception as e:
+        log.debug(f"_docker_exec failed for {container}: {e}")
+        return None
+
+
+# Diagnostic script run inside decypharr via /proc/1 (decypharr is PID 1 in its namespace)
+_DECYPHARR_DIAG_SCRIPT = r"""
+echo '=== thread count ==='
+ls /proc/1/task 2>/dev/null | wc -l
+echo
+echo '=== thread state breakdown ==='
+for tid in /proc/1/task/*; do
+  cat $tid/status 2>/dev/null | grep '^State:' | awk '{print $2}'
+done | sort | uniq -c | sort -rn
+echo
+echo '=== top wchans (kernel wait points) ==='
+for tid in /proc/1/task/*; do
+  cat $tid/wchan 2>/dev/null
+  echo
+done | sort | uniq -c | sort -rn | head -25
+echo
+echo '=== child processes (ffprobe etc) ==='
+ps -ef 2>/dev/null
+echo
+echo '=== open fd count ==='
+ls /proc/1/fd 2>/dev/null | wc -l
+echo
+echo '=== open fd type distribution (top 15) ==='
+for fd in /proc/1/fd/*; do
+  readlink $fd 2>/dev/null
+done | awk -F: '{print $1}' | sort | uniq -c | sort -rn | head -15
+echo
+echo '=== memory + threads ==='
+cat /proc/1/status 2>/dev/null | grep -E '^(VmRSS|VmSize|VmPeak|Threads):'
+echo
+echo '=== uptime of decypharr process (from /proc/1/stat field 22 in clock ticks) ==='
+awk '{print "starttime_ticks=" $22}' /proc/1/stat 2>/dev/null
+cat /proc/uptime 2>/dev/null
+"""
+
+
+def _capture_decypharr_diagnostics(reason):
+    """Capture /proc-based diagnostics from decypharr container.
+
+    Saves to {DATA_DIR}/decypharr-dumps/<timestamp>_<reason>.txt.
+    Returns the saved path or None on failure.
+
+    Why /proc instead of pprof: decypharr v2.1's --pprof flag is broken
+    (advertised in --help but the server doesn't actually start). So we use
+    the kernel's view: thread states, wchans (what kernel ops threads block
+    on), child processes, open fd counts. Comparing a leak capture against
+    a healthy baseline reveals what's accumulating (more threads in particular
+    states, hung ffprobes, leaked file descriptors, etc).
+    """
+    dumps_dir = os.path.join(DATA_DIR, "decypharr-dumps")
+    try:
+        os.makedirs(dumps_dir, exist_ok=True)
+    except Exception as e:
+        log.warning(f"Could not create dumps dir: {e}")
+        return None
+
+    ts = datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    path = os.path.join(dumps_dir, f"{ts}_{reason}.txt")
+
+    output = _docker_exec("decypharr", ["sh", "-c", _DECYPHARR_DIAG_SCRIPT])
+    if output is None:
+        return None
+    try:
+        with open(path, "w") as f:
+            f.write(f"# decypharr diagnostic capture\n")
+            f.write(f"# timestamp: {ts}\n")
+            f.write(f"# reason: {reason}\n\n")
+            f.write(output)
+        log.info(f"Decypharr diagnostics captured: {path}")
+        return path
+    except Exception as e:
+        log.warning(f"Failed to write diagnostic dump {path}: {e}")
+        return None
+
+
 def check_decypharr_cpu_watchdog(state):
     """Auto-restart decypharr if its CPU stays above DECYPHARR_CPU_WATCHDOG_THRESHOLD
     for DECYPHARR_CPU_WATCHDOG_CYCLES consecutive cycles.
@@ -2977,24 +3127,34 @@ def check_decypharr_cpu_watchdog(state):
         return
 
     log.warning(f"Decypharr CPU watchdog firing: {cpu:.1f}% sustained for "
-                f"{streak} cycles, restarting decypharr")
+                f"{streak} cycles, capturing diagnostics then restarting")
+
+    # Capture /proc-based diagnostics BEFORE restart so we have evidence
+    # of what was accumulating (decypharr v2.1's pprof is broken, so we use
+    # kernel-level visibility instead).
+    dump_path = _capture_decypharr_diagnostics(f"watchdog_{cpu:.0f}pct")
+
     if docker_restart("decypharr"):
         state["decypharr_cpu_watchdog_last_restart"] = now
         state["decypharr_cpu_high_streak"] = 0
+        dump_note = f"\n\nDiagnostic dump saved to: {dump_path}\n" if dump_path else \
+                    "\n\n(Diagnostic capture failed — check babysitarr logs)\n"
         log_action(state, "decypharr_cpu_restart",
                    f"Auto-restarted decypharr after {cpu:.1f}% CPU sustained "
-                   f"{streak} cycles ({streak * CHECK_INTERVAL // 60}min)")
+                   f"{streak} cycles ({streak * CHECK_INTERVAL // 60}min); "
+                   f"dump={dump_path or 'failed'}")
         send_notification(
             "Decypharr CPU watchdog: auto-restarted",
             f"Babysitarr auto-restarted decypharr because it was sustained at "
             f"{cpu:.1f}% CPU across {streak} consecutive check cycles "
-            f"({streak * CHECK_INTERVAL // 60}min).\n\n"
+            f"({streak * CHECK_INTERVAL // 60}min).\n"
+            f"{dump_note}"
+            f"The dump has thread state breakdown, kernel wait points (wchan), "
+            f"child process tree (ffprobe accumulation?), and fd counts. "
+            f"Comparing it to a healthy baseline reveals what was leaking.\n\n"
             f"Likely cause: leaked goroutines and/or stuck ffprobe processes "
             f"(known v2.x quirk — DFS-stack background workers don't always "
             f"clean up after errors).\n\n"
-            f"If this happens often, consider filing a bug at "
-            f"https://github.com/sirrobot01/decypharr/issues with a goroutine "
-            f"dump from /debug/pprof.\n\n"
             f"Cooldown: next watchdog restart in {DECYPHARR_CPU_WATCHDOG_COOLDOWN // 60}min.",
             level="info"
         )
