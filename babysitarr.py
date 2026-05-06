@@ -99,7 +99,7 @@ ORPHAN_TIMEOUT_SEC      = int(os.getenv("ORPHAN_TIMEOUT_SEC", "1800"))     # dec
 HOST_LOAD_THRESHOLD     = float(os.getenv("HOST_LOAD_THRESHOLD", "200"))   # 1-min loadavg above this = alert (set high; decypharr/rclone/arrs run loadavg 50-150 normally)
 HOST_DSTATE_THRESHOLD   = int(os.getenv("HOST_DSTATE_THRESHOLD", "3"))     # D-state procs above this = alert (the real wedge canary)
 HOST_HEALTH_COOLDOWN    = int(os.getenv("HOST_HEALTH_COOLDOWN", "1800"))   # min seconds between host-health alerts
-EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "v2.1")      # alert if decypharr image tag drifts from this
+EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "v1.1.6")    # alert if decypharr image tag drifts from this; v1.1.6 is the last pre-DFS-stack release (Oct 2024)
 DECYPHARR_CPU_WATCHDOG_THRESHOLD = float(os.getenv("DECYPHARR_CPU_WATCHDOG_THRESHOLD", "80"))  # CPU% for decypharr container
 DECYPHARR_CPU_WATCHDOG_CYCLES    = int(os.getenv("DECYPHARR_CPU_WATCHDOG_CYCLES", "3"))         # consecutive over-threshold cycles before restart
 DECYPHARR_CPU_WATCHDOG_COOLDOWN  = int(os.getenv("DECYPHARR_CPU_WATCHDOG_COOLDOWN", "3600"))    # min seconds between watchdog restarts
@@ -2857,11 +2857,13 @@ def check_decypharr_version(state):
         "Decypharr version drift",
         f"Decypharr is running version '{running}', but EXPECTED_DECYPHARR_TAG="
         f"'{EXPECTED_DECYPHARR_TAG}'.\n\n"
-        f"v2.2+ has a known FUSE-handling regression that wedges the box. "
-        f"Pin back to v2.1 in the systemd unit:\n"
-        f"  /etc/systemd/system/decypharr.service\n"
-        f"  ExecStart=/usr/bin/docker run ... ghcr.io/sirrobot01/decypharr:v2.1\n"
-        f"Then: sudo systemctl daemon-reload && sudo systemctl restart decypharr",
+        f"Background: v2.x introduced the DFS stack which leaks CPU via parallel "
+        f"FUSE stat probes against rclone-zurg. v2.2 also has a separate "
+        f"FUSE-wedge regression. We pin to v1.1.6 (Oct 2024, pre-DFS) until "
+        f"upstream offers a way to disable DFS workers.\n\n"
+        f"To pin back to {EXPECTED_DECYPHARR_TAG}:\n"
+        f"  sudo sed -i 's|decypharr:[^[:space:]]*|decypharr:{EXPECTED_DECYPHARR_TAG}|' /etc/systemd/system/decypharr.service\n"
+        f"  sudo systemctl daemon-reload && sudo systemctl restart decypharr",
         level="alert"
     )
 
