@@ -2849,8 +2849,12 @@ def check_decypharr_version(state):
     if not running:
         return
 
-    expected = EXPECTED_DECYPHARR_TAG.lstrip("v").strip()
-    if running == expected:
+    # Normalize: strip leading 'v' from BOTH sides. v1.1.6 returns "v1.1.6",
+    # v2.x returns "2.1" — different conventions across major versions, so we
+    # have to compare the version-number portion only.
+    running_norm = running.lstrip("v").strip()
+    expected_norm = EXPECTED_DECYPHARR_TAG.lstrip("v").strip()
+    if running_norm == expected_norm:
         state.pop("decypharr_version_last_alert", None)
         return
 
@@ -2860,9 +2864,9 @@ def check_decypharr_version(state):
         return
     state["decypharr_version_last_alert"] = now
 
-    log.error(f"Decypharr version drift: running '{running}', expected '{expected}'")
+    log.error(f"Decypharr version drift: running '{running}', expected '{EXPECTED_DECYPHARR_TAG}'")
     log_action(state, "decypharr_version_drift",
-               f"Running {running}, expected {expected}")
+               f"Running {running}, expected {EXPECTED_DECYPHARR_TAG}")
     send_notification(
         "Decypharr version drift",
         f"Decypharr is running version '{running}', but EXPECTED_DECYPHARR_TAG="
