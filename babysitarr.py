@@ -447,9 +447,19 @@ def _decypharr_get_torrents():
     try:
         r = requests.get(f"{DECYPHARR_URL}/api/torrents",
                          params={"limit": DECYPHARR_API_LIMIT}, timeout=15)
-        if r.ok:
-            return r.json().get("torrents", []) or []
-        log.warning(f"decypharr /api/torrents returned HTTP {r.status_code}")
+        if not r.ok:
+            log.warning(f"decypharr /api/torrents returned HTTP {r.status_code}")
+            return []
+        data = r.json()
+        # v2.x returns {"torrents": [...], "categories": [...], ...}
+        if isinstance(data, dict):
+            return data.get("torrents", []) or []
+        # v1.x returns a flat list. Different field schema (no info_hash/state/
+        # status/action), so v2-style filters in the consuming checks naturally
+        # return no candidates — that's correct behavior since v1.x doesn't
+        # have the DFS-stack leak those checks were designed to catch.
+        if isinstance(data, list):
+            return data
     except Exception as e:
         log.warning(f"Could not fetch decypharr torrents: {e}")
     return []
