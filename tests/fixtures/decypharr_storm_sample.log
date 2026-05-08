@@ -1,0 +1,356 @@
+[90m2026-05-08 18:07:36[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 18:07:36[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac - Vol. II 2013 1080p Blu-ray Remux AVC DTS-HD MA 5.1 - KRaLiMaRKo.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 18:07:36[0m [32m| INFO  |[0m [realdebrid] Torrent: USG5YU4M45VO2 deleted from RD
+[90m2026-05-08 18:09:39[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m7c7031139d03d899edabc4094e51ae8d50e4631c [36mName=[0mNymphomaniac.Vol.II.2013.DC.1080p.BluRay.x265.AAC5.1
+[90m2026-05-08 18:09:39[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.DC.1080p.BluRay.x265.AAC5.1 submitted to realdebrid [36mid=[0mREIQHHVJDPYP6
+[90m2026-05-08 18:09:40[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.DC.1080p.BluRay.x265-RARBG.mp4 downloaded to RD
+[90m2026-05-08 18:09:40[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 18:16:52[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 18:16:52[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent remarkably.bright.creatures.2026.1080p.web.dl.hevc.x265.rmteam.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 18:16:53[0m [32m| INFO  |[0m [realdebrid] Torrent: VFTDHHUSRSNKC deleted from RD
+[90m2026-05-08 18:16:54[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 18:16:54[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Son In Law 2026 1080p NF WEB-DL DDP5 1 H 264-HDSWEB.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 18:16:55[0m [32m| INFO  |[0m [realdebrid] Torrent: BY3FNUMUC7GC6 deleted from RD
+[90m2026-05-08 18:17:34[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5953f2e7181efcc75d110761ef68664645d8e0a8 [36mName=[0m"LInconnu De La Grande Arche (2025) 1080p BluRay 5.1-WORLD"
+[90m2026-05-08 18:17:35[0m [32m| INFO  |[0m [realdebrid] Torrent: LInconnu De La Grande Arche (2025) 1080p BluRay 5.1-WORLD submitted to realdebrid [36mid=[0mUJ554C6SBRZPI
+[90m2026-05-08 18:17:36[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m98715139451f37eb13fcaf5e6da1025b9cb4618d [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-HHWEB"
+[90m2026-05-08 18:17:37[0m [32m| INFO  |[0m [realdebrid] Torrent: UJ554C6SBRZPI deleted from RD
+[90m2026-05-08 18:17:37[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-HHWEB submitted to realdebrid [36mid=[0mHFVFEKI2OG3FO
+[90m2026-05-08 18:17:38[0m [32m| INFO  |[0m [realdebrid] Torrent: HFVFEKI2OG3FO deleted from RD
+[90m2026-05-08 18:17:38[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5f5da8d238180b81219d0029a3ed8ad1634c985e [36mName=[0m"LInconnu De La Grande Arche (2025) 720p BluRay-WORLD"
+[90m2026-05-08 18:17:39[0m [32m| INFO  |[0m [realdebrid] Torrent: LInconnu De La Grande Arche (2025) 720p BluRay-WORLD submitted to realdebrid [36mid=[0mK7EZN2CZUFMG4
+[90m2026-05-08 18:17:40[0m [32m| INFO  |[0m [realdebrid] Torrent: K7EZN2CZUFMG4 deleted from RD
+[90m2026-05-08 18:17:42[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 18:17:43[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mIUWAXJDIWPVJC
+[90m2026-05-08 18:17:43[0m [32m| INFO  |[0m [realdebrid] Torrent: IUWAXJDIWPVJC deleted from RD
+[90m2026-05-08 18:17:44[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m98715139451f37eb13fcaf5e6da1025b9cb4618d [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-HHWEB"
+[90m2026-05-08 18:17:45[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-HHWEB submitted to realdebrid [36mid=[0mVIUQBNF6QEG5I
+[90m2026-05-08 18:17:45[0m [32m| INFO  |[0m [realdebrid] Torrent: www.UIndex.org    -    Remarkably Bright Creatures 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-HHWEB downloaded to RD
+[90m2026-05-08 18:17:45[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 18:17:47[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m7f0a136d6569ff63ef784bc6d5529f29ef1e3bf6 [36mName=[0m"El yerno (2026) 1080p WEBRip 5.1 x264 -YTS"
+[90m2026-05-08 18:17:47[0m [32m| INFO  |[0m [realdebrid] Torrent: El yerno (2026) 1080p WEBRip 5.1 x264 -YTS submitted to realdebrid [36mid=[0mMHLAZCWQBDYBG
+[90m2026-05-08 18:17:48[0m [32m| INFO  |[0m [realdebrid] Torrent: El.Yerno.2026.1080p.WEBRip.x264.AAC5.1-[YTS.BZ].mp4 downloaded to RD
+[90m2026-05-08 18:17:48[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 18:39:40[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 18:39:40[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol.II.2013.DC.1080p.BluRay.x265-RARBG.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 18:39:41[0m [32m| INFO  |[0m [realdebrid] Torrent: REIQHHVJDPYP6 deleted from RD
+[90m2026-05-08 18:41:05[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mb5d7ad740c20210ae5eb2b4dc77ef108b3869263 [36mName=[0m"Nymphomaniac Vol. II (2013) 1080p BrRip x264 -YIFY"
+[90m2026-05-08 18:41:06[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol. II (2013) 1080p BrRip x264 -YIFY submitted to realdebrid [36mid=[0mSFCT76K2MFRK4
+[90m2026-05-08 18:41:07[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol..II.2013.1080p.BluRay.x264.YIFY.mp4 downloaded to RD
+[90m2026-05-08 18:41:07[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 18:47:45[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5953f2e7181efcc75d110761ef68664645d8e0a8 [36mName=[0m"LInconnu De La Grande Arche (2025) 1080p BluRay 5.1-WORLD"
+[90m2026-05-08 18:47:45[0m [32m| INFO  |[0m [realdebrid] Torrent: LInconnu De La Grande Arche (2025) 1080p BluRay 5.1-WORLD submitted to realdebrid [36mid=[0m3RZI77LJ73IFW
+[90m2026-05-08 18:47:45[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 18:47:45[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent www.UIndex.org    -    Remarkably Bright Creatures 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-HHWEB [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 18:47:46[0m [32m| INFO  |[0m [realdebrid] Torrent: LInconnu.De.La.Grande.Arche.2025.1080p.BluRay.x264.AAC5.1-WORLD.mp4 downloaded to RD
+[90m2026-05-08 18:47:46[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 18:47:46[0m [32m| INFO  |[0m [realdebrid] Torrent: VIUQBNF6QEG5I deleted from RD
+[90m2026-05-08 18:47:48[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 18:47:48[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent El.Yerno.2026.1080p.WEBRip.x264.AAC5.1-[YTS.BZ].mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 18:47:48[0m [32m| INFO  |[0m [realdebrid] Torrent: MHLAZCWQBDYBG deleted from RD
+[90m2026-05-08 18:49:24[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 18:49:24[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mQ5BS7IPITVRJS
+[90m2026-05-08 18:49:25[0m [32m| INFO  |[0m [realdebrid] Torrent: Q5BS7IPITVRJS deleted from RD
+[90m2026-05-08 18:49:26[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 18:49:27[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mBF3APJUSDWA4G
+[90m2026-05-08 18:49:27[0m [32m| INFO  |[0m [realdebrid] Torrent: BF3APJUSDWA4G deleted from RD
+[90m2026-05-08 18:49:30[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m374179283002e7f99ce15b9f764633136bade936 [36mName=[0m"Remarkably Bright Creatures (2026) 720p WEBRip x264 -YTS"
+[90m2026-05-08 18:49:32[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures (2026) 720p WEBRip x264 -YTS submitted to realdebrid [36mid=[0m4WEQW4EVJQZMI
+[90m2026-05-08 18:49:33[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures (2026) [720p] [WEBRip] [YTS.BZ] downloaded to RD
+[90m2026-05-08 18:49:33[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 19:11:07[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 19:11:07[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol..II.2013.1080p.BluRay.x264.YIFY.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 19:11:07[0m [32m| INFO  |[0m [realdebrid] Torrent: SFCT76K2MFRK4 deleted from RD
+[90m2026-05-08 19:13:11[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5d09f4093f506014fd8cb4c412ef63cfa449f3be [36mName=[0mNymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.x264.DTS-RAR
+[90m2026-05-08 19:13:11[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.x264.DTS-RAR submitted to realdebrid [36mid=[0mOZMS42NA6ZI3C
+[90m2026-05-08 19:13:12[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.x264.DTS-RARBG downloaded to RD
+[90m2026-05-08 19:13:12[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 2 files ...
+[90m2026-05-08 19:17:46[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 19:17:46[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent LInconnu.De.La.Grande.Arche.2025.1080p.BluRay.x264.AAC5.1-WORLD.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 19:17:46[0m [32m| INFO  |[0m [realdebrid] Torrent: 3RZI77LJ73IFW deleted from RD
+[90m2026-05-08 19:18:02[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 19:18:02[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mQW6J5HIUZAI2Y
+[90m2026-05-08 19:18:03[0m [32m| INFO  |[0m [realdebrid] Torrent: QW6J5HIUZAI2Y deleted from RD
+[90m2026-05-08 19:19:04[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mf4ba786c9ae303fd283352a70c3b004133961bb9 [36mName=[0m"The Great Arch (2025) 1080p WEBRip 5.1-WORLD"
+[90m2026-05-08 19:19:05[0m [32m| INFO  |[0m [realdebrid] Torrent: The Great Arch (2025) 1080p WEBRip 5.1-WORLD submitted to realdebrid [36mid=[0m6FTO5GXH37BQA
+[90m2026-05-08 19:19:05[0m [32m| INFO  |[0m [realdebrid] Torrent: www.UIndex.org    -    The Great Arch (2025) 1080p WEBRip 5.1-WORLD downloaded to RD
+[90m2026-05-08 19:19:05[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 19:19:33[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 19:19:33[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Remarkably Bright Creatures (2026) [720p] [WEBRip] [YTS.BZ] [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 19:19:33[0m [32m| INFO  |[0m [realdebrid] Torrent: 4WEQW4EVJQZMI deleted from RD
+[90m2026-05-08 19:21:12[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 19:21:13[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mMT4OOXRLLWDZU
+[90m2026-05-08 19:21:13[0m [32m| INFO  |[0m [realdebrid] Torrent: MT4OOXRLLWDZU deleted from RD
+[90m2026-05-08 19:21:14[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 19:21:15[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mJJUOPEBVQXU5Q
+[90m2026-05-08 19:21:15[0m [32m| INFO  |[0m [realdebrid] Torrent: JJUOPEBVQXU5Q deleted from RD
+[90m2026-05-08 19:43:12[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 2 files still pending
+[90m2026-05-08 19:43:12[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.x264.DTS-RARBG [36merror=[0m[31m[1m"timeout waiting for files: 2 files still pending"[0m[0m
+[90m2026-05-08 19:43:13[0m [32m| INFO  |[0m [realdebrid] Torrent: OZMS42NA6ZI3C deleted from RD
+[90m2026-05-08 19:44:40[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m049d36c30ebdeba5d7bc01f047e8f09a99756814 [36mName=[0m"Nymphomaniac - Vol. II 2013 DC 1080p Bluray x265 HEVC 10bit AAC"
+[90m2026-05-08 19:44:41[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac - Vol. II 2013 DC 1080p Bluray x265 HEVC 10bit AAC submitted to realdebrid [36mid=[0mCD5LYQM4SJPFQ
+[90m2026-05-08 19:44:41[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac - Vol. II 2013 DC (1080p Bluray x265 HEVC 10bit AAC 5.1 Tigole) downloaded to RD
+[90m2026-05-08 19:44:41[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 3 files ...
+[90m2026-05-08 19:48:20[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m0378a25838012f8a1148c090cdd6e41f8cd07ccd [36mName=[0m"My Dearest Assassin 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-TURG"
+[90m2026-05-08 19:48:22[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 19:48:22[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mB6DADET5BVTSM
+[90m2026-05-08 19:48:23[0m [32m| INFO  |[0m [realdebrid] Torrent: B6DADET5BVTSM deleted from RD
+[90m2026-05-08 19:49:05[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 19:49:05[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent www.UIndex.org    -    The Great Arch (2025) 1080p WEBRip 5.1-WORLD [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 19:49:06[0m [32m| INFO  |[0m [realdebrid] Torrent: 6FTO5GXH37BQA deleted from RD
+[90m2026-05-08 19:50:53[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0ma8cdf70554a0a81be4f2c0c824d7fced0673d4b0 [36mName=[0m"The Great Arch (2025) 1080p WEBRip x265 10bit 5.1-WORLD"
+[90m2026-05-08 19:50:53[0m [32m| INFO  |[0m [realdebrid] Torrent: The Great Arch (2025) 1080p WEBRip x265 10bit 5.1-WORLD submitted to realdebrid [36mid=[0m5U5DCZM76QQ5O
+[90m2026-05-08 19:50:54[0m [32m| INFO  |[0m [realdebrid] Torrent: The.Great.Arch.2025.1080p.WEBRip.x265.10bit.AAC5.1-WORLD.mp4 downloaded to RD
+[90m2026-05-08 19:50:54[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 20:14:41[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 3 files still pending
+[90m2026-05-08 20:14:41[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac - Vol. II 2013 DC (1080p Bluray x265 HEVC 10bit AAC 5.1 Tigole) [36merror=[0m[31m[1m"timeout waiting for files: 3 files still pending"[0m[0m
+[90m2026-05-08 20:14:42[0m [32m| INFO  |[0m [realdebrid] Torrent: CD5LYQM4SJPFQ deleted from RD
+[90m2026-05-08 20:16:47[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m120b61d8633a1c76c581d0b52694b9567b222fdc [36mName=[0m"Nymphomaniac Vol II 2013 Directors Cut 1080p BluRay HEVC 10-bit FLAC 5 1-Mr"
+[90m2026-05-08 20:16:47[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 Directors Cut 1080p BluRay HEVC 10-bit FLAC 5 1-Mr submitted to realdebrid [36mid=[0mSKRNBJX2VR6XS
+[90m2026-05-08 20:16:48[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 Directors Cut 1080p BluRay HEVC 10-bit FLAC 5 1-MrTentsaw.mkv downloaded to RD
+[90m2026-05-08 20:16:48[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 20:18:47[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m0378a25838012f8a1148c090cdd6e41f8cd07ccd [36mName=[0m"My Dearest Assassin 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-TURG"
+[90m2026-05-08 20:18:47[0m [32m| INFO  |[0m [realdebrid] Torrent: My Dearest Assassin 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-TURG submitted to realdebrid [36mid=[0m4EICPWJF64PYS
+[90m2026-05-08 20:18:47[0m [32m| INFO  |[0m [realdebrid] Torrent: My Dearest Assassin 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-TURG.mkv downloaded to RD
+[90m2026-05-08 20:18:47[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 20:18:49[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maff544a21a55db0312a7666d97ea7b9f62d085e5 [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU"
+[90m2026-05-08 20:18:49[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU submitted to realdebrid [36mid=[0m4I7ZZTGS5FJPW
+[90m2026-05-08 20:18:49[0m [32m| INFO  |[0m [realdebrid] Torrent: 4I7ZZTGS5FJPW deleted from RD
+[90m2026-05-08 20:18:51[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 20:18:51[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mHSQHS5W2PECVE
+[90m2026-05-08 20:18:51[0m [32m| INFO  |[0m [realdebrid] Torrent: HSQHS5W2PECVE deleted from RD
+[90m2026-05-08 20:20:54[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 20:20:54[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent The.Great.Arch.2025.1080p.WEBRip.x265.10bit.AAC5.1-WORLD.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 20:20:54[0m [32m| INFO  |[0m [realdebrid] Torrent: 5U5DCZM76QQ5O deleted from RD
+[90m2026-05-08 20:22:43[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m29cab6016145a21298a3fad3c8a7b287357379c5 [36mName=[0m"The Great Arch (2025) 1080p WEBRip 5.1 10Bit x265 -YTS"
+[90m2026-05-08 20:22:43[0m [32m| INFO  |[0m [realdebrid] Torrent: The Great Arch (2025) 1080p WEBRip 5.1 10Bit x265 -YTS submitted to realdebrid [36mid=[0m2BFZCNJL7RVWA
+[90m2026-05-08 20:22:44[0m [32m| INFO  |[0m [realdebrid] Torrent: The Great Arch (2025) [1080p] [WEBRip] [x265] [10bit] [5.1] [YTS.BZ] downloaded to RD
+[90m2026-05-08 20:22:44[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 20:46:48[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 20:46:48[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac Vol II 2013 Directors Cut 1080p BluRay HEVC 10-bit FLAC 5 1-MrTentsaw.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 20:46:48[0m [32m| INFO  |[0m [realdebrid] Torrent: SKRNBJX2VR6XS deleted from RD
+[90m2026-05-08 20:48:14[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m946fa70ffd22455efc35ab3fd1a2b7f02e645a79 [36mName=[0m"Nymphomaniac.Vol.II.2013.LIMITED.1080p.BluRay.X264-AMIABLE [Publ"
+[90m2026-05-08 20:48:15[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BluRay.X264-AMIABLE [Publ submitted to realdebrid [36mid=[0mR3X6B67RKV5K2
+[90m2026-05-08 20:48:15[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv downloaded to RD
+[90m2026-05-08 20:48:15[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 20:48:47[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 20:48:47[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent My Dearest Assassin 2026 1080p NF WEB-DL DDP5 1 Atmos H 264-TURG.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 20:48:47[0m [32m| INFO  |[0m [realdebrid] Torrent: 4EICPWJF64PYS deleted from RD
+[90m2026-05-08 20:48:57[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maff544a21a55db0312a7666d97ea7b9f62d085e5 [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU"
+[90m2026-05-08 20:48:57[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU submitted to realdebrid [36mid=[0mUXZ6PYFEFU7Q6
+[90m2026-05-08 20:48:58[0m [32m| INFO  |[0m [realdebrid] Torrent: UXZ6PYFEFU7Q6 deleted from RD
+[90m2026-05-08 20:48:59[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maff544a21a55db0312a7666d97ea7b9f62d085e5 [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU"
+[90m2026-05-08 20:48:59[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU submitted to realdebrid [36mid=[0m5WNHM64GXYPP2
+[90m2026-05-08 20:48:59[0m [32m| INFO  |[0m [realdebrid] Torrent: 5WNHM64GXYPP2 deleted from RD
+[90m2026-05-08 20:49:01[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 20:49:01[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0m7EEPQT2AXJWVK
+[90m2026-05-08 20:49:01[0m [32m| INFO  |[0m [realdebrid] Torrent: 7EEPQT2AXJWVK deleted from RD
+[90m2026-05-08 20:49:03[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 20:49:04[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0mW2MWKIDZBIA62
+[90m2026-05-08 20:49:05[0m [32m| INFO  |[0m [realdebrid] Torrent: W2MWKIDZBIA62 deleted from RD
+[90m2026-05-08 20:52:44[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 20:52:44[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent The Great Arch (2025) [1080p] [WEBRip] [x265] [10bit] [5.1] [YTS.BZ] [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 20:52:44[0m [32m| INFO  |[0m [realdebrid] Torrent: 2BFZCNJL7RVWA deleted from RD
+[90m2026-05-08 20:54:28[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5f5da8d238180b81219d0029a3ed8ad1634c985e [36mName=[0m"LInconnu De La Grande Arche (2025) 720p BluRay-WORLD"
+[90m2026-05-08 20:54:28[0m [32m| INFO  |[0m [realdebrid] Torrent: LInconnu De La Grande Arche (2025) 720p BluRay-WORLD submitted to realdebrid [36mid=[0mJJ3NJKBSUJFWO
+[90m2026-05-08 20:54:29[0m [32m| INFO  |[0m [realdebrid] Torrent: LInconnu.De.La.Grande.Arche.2025.720p.BluRay.x264.AAC-WORLD.mp4 downloaded to RD
+[90m2026-05-08 20:54:29[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 21:18:15[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 21:18:15[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol.II.2013.LIMITED.1080p.BluRay.X264-AMIABLE.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 21:18:16[0m [32m| INFO  |[0m [realdebrid] Torrent: R3X6B67RKV5K2 deleted from RD
+[90m2026-05-08 21:19:12[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maff544a21a55db0312a7666d97ea7b9f62d085e5 [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU"
+[90m2026-05-08 21:19:12[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU submitted to realdebrid [36mid=[0mHU5TARJKFYS7I
+[90m2026-05-08 21:19:13[0m [32m| INFO  |[0m [realdebrid] Torrent: HU5TARJKFYS7I deleted from RD
+[90m2026-05-08 21:19:14[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 21:19:14[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mR3DYUA7M7SFQQ
+[90m2026-05-08 21:19:15[0m [32m| INFO  |[0m [realdebrid] Torrent: R3DYUA7M7SFQQ deleted from RD
+[90m2026-05-08 21:19:16[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 21:19:16[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0m4W4XH7NKULJW4
+[90m2026-05-08 21:19:17[0m [32m| INFO  |[0m [realdebrid] Torrent: 4W4XH7NKULJW4 deleted from RD
+[90m2026-05-08 21:20:07[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mac04effee7499256983f585e087127e4f6b9af0e [36mName=[0mNymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.H264.AAC-RAR
+[90m2026-05-08 21:20:08[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.H264.AAC-RAR submitted to realdebrid [36mid=[0mWPUZDLKJNISJI
+[90m2026-05-08 21:20:09[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.H264.AAC-RARBG downloaded to RD
+[90m2026-05-08 21:20:09[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 2 files ...
+[90m2026-05-08 21:24:29[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 21:24:29[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent LInconnu.De.La.Grande.Arche.2025.720p.BluRay.x264.AAC-WORLD.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 21:24:29[0m [32m| INFO  |[0m [realdebrid] Torrent: JJ3NJKBSUJFWO deleted from RD
+[90m2026-05-08 21:26:14[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me01b9f81f9a77f28a1638df0273b1596eec7fe5f [36mName=[0m"The Great Arch (2025) 720p WEBRip-WORLD"
+[90m2026-05-08 21:26:15[0m [32m| INFO  |[0m [realdebrid] Torrent: The Great Arch (2025) 720p WEBRip-WORLD submitted to realdebrid [36mid=[0mKF6T4D2P5CVF2
+[90m2026-05-08 21:26:15[0m [32m| INFO  |[0m [realdebrid] Torrent: The.Great.Arch.2025.720p.WEBRip.x264.AAC-WORLD.mp4 downloaded to RD
+[90m2026-05-08 21:26:15[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 21:49:34[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maff544a21a55db0312a7666d97ea7b9f62d085e5 [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU"
+[90m2026-05-08 21:49:35[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU submitted to realdebrid [36mid=[0mUFKP2B4QVC56Y
+[90m2026-05-08 21:49:36[0m [32m| INFO  |[0m [realdebrid] Torrent: UFKP2B4QVC56Y deleted from RD
+[90m2026-05-08 21:49:36[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maff544a21a55db0312a7666d97ea7b9f62d085e5 [36mName=[0m"Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU"
+[90m2026-05-08 21:49:37[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably Bright Creatures 2026 1080p NF WEB-DL DUAL DDP5 1 Atmos H 264-TU submitted to realdebrid [36mid=[0mJEABPWMN2CEGS
+[90m2026-05-08 21:49:38[0m [32m| INFO  |[0m [realdebrid] Torrent: JEABPWMN2CEGS deleted from RD
+[90m2026-05-08 21:49:38[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me3431763a79f9767e280f66852323f1e9f8d2bf8 [36mName=[0m"Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐"
+[90m2026-05-08 21:49:39[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.1080p.WEB-DL.H.264.MultiLang.YG⭐ submitted to realdebrid [36mid=[0mO647AMIYTRZDS
+[90m2026-05-08 21:49:40[0m [32m| INFO  |[0m [realdebrid] Torrent: O647AMIYTRZDS deleted from RD
+[90m2026-05-08 21:49:41[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 21:49:41[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0mB3CA3SSKQZUTO
+[90m2026-05-08 21:49:42[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0ma2ceff0e35037f7b7903fa4cb45e15b82a7d04cb [36mName=[0m"Lorne (2026) 1080p WEBRip 5.1-LAMA"
+[90m2026-05-08 21:49:43[0m [32m| INFO  |[0m [realdebrid] Torrent: B3CA3SSKQZUTO deleted from RD
+[90m2026-05-08 21:49:43[0m [32m| INFO  |[0m [realdebrid] Torrent: Lorne (2026) 1080p WEBRip 5.1-LAMA submitted to realdebrid [36mid=[0mF2TOCYVKHKDP4
+[90m2026-05-08 21:49:44[0m [32m| INFO  |[0m [realdebrid] Torrent: F2TOCYVKHKDP4 deleted from RD
+[90m2026-05-08 21:50:09[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 2 files still pending
+[90m2026-05-08 21:50:09[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol.II.2013.Directors.Cut.1080p.BluRay.H264.AAC-RARBG [36merror=[0m[31m[1m"timeout waiting for files: 2 files still pending"[0m[0m
+[90m2026-05-08 21:50:09[0m [32m| INFO  |[0m [realdebrid] Torrent: WPUZDLKJNISJI deleted from RD
+[90m2026-05-08 21:51:55[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m1a128a51b9f37592e8d26a04114ecab939d48407 [36mName=[0mNymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG
+[90m2026-05-08 21:51:56[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG submitted to realdebrid [36mid=[0mJKV7R25OS7LVI
+[90m2026-05-08 21:51:57[0m [32m| INFO  |[0m [realdebrid] Torrent: JKV7R25OS7LVI deleted from RD
+[90m2026-05-08 21:51:57[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m68cf1f1a0943dbf09b139e1aac006b93d47a847c [36mName=[0m"Nymphomaniac Vol. II 2013 BluRay 1080p x264 DD5.1 FLiCKSiCK"
+[90m2026-05-08 21:51:57[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol. II 2013 BluRay 1080p x264 DD5.1 FLiCKSiCK submitted to realdebrid [36mid=[0mCDDQ2G2T5NYKM
+[90m2026-05-08 21:51:59[0m [32m| INFO  |[0m [realdebrid] Torrent: CDDQ2G2T5NYKM deleted from RD
+[90m2026-05-08 21:51:59[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mb7c65e8c20773414aab0871a91d58184c8bdbfdb [36mName=[0m"Nymphomaniac Vol II 2013 DC 1080p BluRay x264 AAC - Ozlem"
+[90m2026-05-08 21:51:59[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 DC 1080p BluRay x264 AAC - Ozlem submitted to realdebrid [36mid=[0m7WDAJHG4UBKTC
+[90m2026-05-08 21:52:00[0m [32m| INFO  |[0m [realdebrid] Torrent: 7WDAJHG4UBKTC deleted from RD
+[90m2026-05-08 21:52:01[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m1a128a51b9f37592e8d26a04114ecab939d48407 [36mName=[0mNymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG
+[90m2026-05-08 21:52:01[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG submitted to realdebrid [36mid=[0m3BOXR6N7EJWBA
+[90m2026-05-08 21:52:02[0m [32m| INFO  |[0m [realdebrid] Torrent: 3BOXR6N7EJWBA deleted from RD
+[90m2026-05-08 21:52:03[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mfa514b55a454f7cf6bcba3f8935d5f132a70d858 [36mName=[0m"Nymphomaniac Vol. II (2013) 720p BrRip x264 -YIFY"
+[90m2026-05-08 21:52:03[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol. II (2013) 720p BrRip x264 -YIFY submitted to realdebrid [36mid=[0m2ODP3FUL47D5C
+[90m2026-05-08 21:52:03[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol..II.2013.720p.BluRay.x264.YIFY.mp4 downloaded to RD
+[90m2026-05-08 21:52:03[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 21:56:15[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 21:56:15[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent The.Great.Arch.2025.720p.WEBRip.x264.AAC-WORLD.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 21:56:16[0m [32m| INFO  |[0m [realdebrid] Torrent: KF6T4D2P5CVF2 deleted from RD
+[90m2026-05-08 22:19:55[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0ma2ceff0e35037f7b7903fa4cb45e15b82a7d04cb [36mName=[0m"Lorne (2026) 1080p WEBRip 5.1-LAMA"
+[90m2026-05-08 22:19:55[0m [32m| INFO  |[0m [realdebrid] Torrent: Lorne (2026) 1080p WEBRip 5.1-LAMA submitted to realdebrid [36mid=[0mE7ZQ7HY4FULEG
+[90m2026-05-08 22:19:56[0m [32m| INFO  |[0m [realdebrid] Torrent: E7ZQ7HY4FULEG deleted from RD
+[90m2026-05-08 22:19:57[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 22:19:57[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0mFKBAIG45CGAMS
+[90m2026-05-08 22:19:58[0m [32m| INFO  |[0m [realdebrid] Torrent: FKBAIG45CGAMS deleted from RD
+[90m2026-05-08 22:19:59[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng"
+[90m2026-05-08 22:19:59[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng submitted to realdebrid [36mid=[0mXIQFRSRERPCTC
+[90m2026-05-08 22:20:00[0m [32m| INFO  |[0m [realdebrid] Torrent: XIQFRSRERPCTC deleted from RD
+[90m2026-05-08 22:22:03[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 22:22:03[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol..II.2013.720p.BluRay.x264.YIFY.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 22:22:04[0m [32m| INFO  |[0m [realdebrid] Torrent: 2ODP3FUL47D5C deleted from RD
+[90m2026-05-08 22:23:48[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m1a128a51b9f37592e8d26a04114ecab939d48407 [36mName=[0mNymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG
+[90m2026-05-08 22:23:48[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG submitted to realdebrid [36mid=[0mFY3S5WKOQD62W
+[90m2026-05-08 22:23:49[0m [32m| INFO  |[0m [realdebrid] Torrent: FY3S5WKOQD62W deleted from RD
+[90m2026-05-08 22:23:50[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m68cf1f1a0943dbf09b139e1aac006b93d47a847c [36mName=[0m"Nymphomaniac Vol. II 2013 BluRay 1080p x264 DD5.1 FLiCKSiCK"
+[90m2026-05-08 22:23:50[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol. II 2013 BluRay 1080p x264 DD5.1 FLiCKSiCK submitted to realdebrid [36mid=[0mQYU4FHDGBAIWS
+[90m2026-05-08 22:23:51[0m [32m| INFO  |[0m [realdebrid] Torrent: QYU4FHDGBAIWS deleted from RD
+[90m2026-05-08 22:23:52[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mb7c65e8c20773414aab0871a91d58184c8bdbfdb [36mName=[0m"Nymphomaniac Vol II 2013 DC 1080p BluRay x264 AAC - Ozlem"
+[90m2026-05-08 22:23:52[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 DC 1080p BluRay x264 AAC - Ozlem submitted to realdebrid [36mid=[0mBCC5KQHBDPJ4M
+[90m2026-05-08 22:23:52[0m [32m| INFO  |[0m [realdebrid] Torrent: BCC5KQHBDPJ4M deleted from RD
+[90m2026-05-08 22:23:54[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m1a128a51b9f37592e8d26a04114ecab939d48407 [36mName=[0mNymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG
+[90m2026-05-08 22:23:54[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG submitted to realdebrid [36mid=[0mE6FYBPBAKZQMQ
+[90m2026-05-08 22:23:54[0m [32m| INFO  |[0m [realdebrid] Torrent: E6FYBPBAKZQMQ deleted from RD
+[90m2026-05-08 22:23:56[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mb40b0009a4c041bf7caee7f14c16b78f8f0870f4 [36mName=[0m"Нимфоманка - Часть 2 + Nymphomaniac - Vol. II [2013, Дания, Драма, BDRip 720p] Dub + Original Eng"
+[90m2026-05-08 22:23:57[0m [32m| INFO  |[0m [realdebrid] Torrent: Нимфоманка - Часть 2 + Nymphomaniac - Vol. II [2013, Дания, Драма, BDRip 720p] Dub + Original Eng submitted to realdebrid [36mid=[0m4OMRKQ5XPPJSI
+[90m2026-05-08 22:23:58[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m0dc3a69b4d4c65e4512ab603fd2b29c75353d4f0 [36mName=[0mNymphomaniac.Vol.II.2013.Directors.Cut.720p.BluRay.x264.DTS-RARB
+[90m2026-05-08 22:23:58[0m [32m| INFO  |[0m [realdebrid] Torrent: 4OMRKQ5XPPJSI deleted from RD
+[90m2026-05-08 22:23:58[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.720p.BluRay.x264.DTS-RARB submitted to realdebrid [36mid=[0mF3R24ACZIRLGW
+[90m2026-05-08 22:23:59[0m [32m| INFO  |[0m [realdebrid] Torrent: F3R24ACZIRLGW deleted from RD
+[90m2026-05-08 22:24:00[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maaf45cb659fb588c74c7cf7166e25704e0cd9cb3 [36mName=[0m"Nymphomaniac.Vol.II.2013.LIMITED.720p.BluRay.X264-AMIABLE [Publi"
+[90m2026-05-08 22:24:00[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.720p.BluRay.X264-AMIABLE [Publi submitted to realdebrid [36mid=[0mRNHMKSMNLWHZU
+[90m2026-05-08 22:24:01[0m [32m| INFO  |[0m [realdebrid] Torrent: RNHMKSMNLWHZU deleted from RD
+[90m2026-05-08 22:24:02[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m735ad7191a0304da1b360fdad61041618dc6baa0 [36mName=[0m"Nymphomaniac Vol II 2013 DC 720p BluRay H264 AAC"
+[90m2026-05-08 22:24:02[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 DC 720p BluRay H264 AAC submitted to realdebrid [36mid=[0mXQ4FTATAOWU6U
+[90m2026-05-08 22:24:03[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.DC.720p.BluRay.H264.AAC-RARBG downloaded to RD
+[90m2026-05-08 22:24:03[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 22:36:11[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-4k [36mDebrid=[0mrealdebrid [36mHash=[0mfd38e55a12e4092678ff2049031ce5fd976391be [36mName=[0mRemarkably.Bright.Creatures.2026.2160p.NF.WEB-DL.DDP.5.1.Atmos.H.265-CHDWEB
+[90m2026-05-08 22:36:11[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.2160p.NF.WEB-DL.DDP.5.1.Atmos.H.265-CHDWEB submitted to realdebrid [36mid=[0mMCZG6FVWK5NGW
+[90m2026-05-08 22:36:11[0m [32m| INFO  |[0m [realdebrid] Torrent: Remarkably.Bright.Creatures.2026.2160p.NF.WEB-DL.DDP.5.1.Atmos.H.265-CHDWEB downloaded to RD
+[90m2026-05-08 22:36:11[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 22:43:09[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mddde56e58452652bc28204d179f5c18c72af4e88 [36mName=[0m"Выстрел в пустоту + Главарь + Shot caller [2017, США, драма, триллер, BDRemux 1080p] [USA Transfer] Dub + AVO + ) + Original (Eng)"
+[90m2026-05-08 22:43:10[0m [32m| INFO  |[0m [realdebrid] Torrent: Выстрел в пустоту + Главарь + Shot caller [2017, США, драма, триллер, BDRemux 1080p] [USA Transfer] Dub + AVO + ) + Original (Eng) submitted to realdebrid [36mid=[0mNSPX5NVOD52KU
+[90m2026-05-08 22:43:11[0m [32m| INFO  |[0m [realdebrid] Torrent: Âûñòðåë â ïóñòîòó (2017) BDRemux 1080p.mkv downloaded to RD
+[90m2026-05-08 22:43:11[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 22:50:27[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0ma2ceff0e35037f7b7903fa4cb45e15b82a7d04cb [36mName=[0m"Lorne (2026) 1080p WEBRip 5.1-LAMA"
+[90m2026-05-08 22:50:28[0m [32m| INFO  |[0m [realdebrid] Torrent: Lorne (2026) 1080p WEBRip 5.1-LAMA submitted to realdebrid [36mid=[0mQ6SWJMUGTPJS6
+[90m2026-05-08 22:50:28[0m [32m| INFO  |[0m [realdebrid] Torrent: Lorne.2026.1080p.WEBRip.x264.AAC5.1-LAMA.mp4 downloaded to RD
+[90m2026-05-08 22:50:28[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 22:50:30[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 22:50:30[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0mMGGUKDAYN2YMM
+[90m2026-05-08 22:50:30[0m [32m| INFO  |[0m [realdebrid] Torrent: MGGUKDAYN2YMM deleted from RD
+[90m2026-05-08 22:50:32[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng"
+[90m2026-05-08 22:50:32[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng submitted to realdebrid [36mid=[0mM3BT3AUBSDMAY
+[90m2026-05-08 22:50:32[0m [32m| INFO  |[0m [realdebrid] Torrent: M3BT3AUBSDMAY deleted from RD
+[90m2026-05-08 22:50:33[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m0d2c56955ed1541cf75247a0aeeb0a00251db0b5 [36mName=[0m"Couples Weekend (2025) 720p WEBRip-LAMA"
+[90m2026-05-08 22:50:34[0m [32m| INFO  |[0m [realdebrid] Torrent: Couples Weekend (2025) 720p WEBRip-LAMA submitted to realdebrid [36mid=[0m56KBRR4L2PO5U
+[90m2026-05-08 22:50:34[0m [32m| INFO  |[0m [realdebrid] Torrent: 56KBRR4L2PO5U deleted from RD
+[90m2026-05-08 22:54:03[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 22:54:03[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Nymphomaniac.Vol.II.2013.DC.720p.BluRay.H264.AAC-RARBG [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 22:54:03[0m [32m| INFO  |[0m [realdebrid] Torrent: XQ4FTATAOWU6U deleted from RD
+[90m2026-05-08 22:55:50[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m1a128a51b9f37592e8d26a04114ecab939d48407 [36mName=[0mNymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG
+[90m2026-05-08 22:55:51[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG submitted to realdebrid [36mid=[0mBGJ4Q3RL6V2T6
+[90m2026-05-08 22:55:52[0m [32m| INFO  |[0m [realdebrid] Torrent: BGJ4Q3RL6V2T6 deleted from RD
+[90m2026-05-08 22:55:52[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m68cf1f1a0943dbf09b139e1aac006b93d47a847c [36mName=[0m"Nymphomaniac Vol. II 2013 BluRay 1080p x264 DD5.1 FLiCKSiCK"
+[90m2026-05-08 22:55:53[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol. II 2013 BluRay 1080p x264 DD5.1 FLiCKSiCK submitted to realdebrid [36mid=[0mCBTOZZLNRGU46
+[90m2026-05-08 22:55:54[0m [32m| INFO  |[0m [realdebrid] Torrent: CBTOZZLNRGU46 deleted from RD
+[90m2026-05-08 22:55:55[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mb7c65e8c20773414aab0871a91d58184c8bdbfdb [36mName=[0m"Nymphomaniac Vol II 2013 DC 1080p BluRay x264 AAC - Ozlem"
+[90m2026-05-08 22:55:56[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 DC 1080p BluRay x264 AAC - Ozlem submitted to realdebrid [36mid=[0mWLSWZYRQJOVXU
+[90m2026-05-08 22:55:56[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m1a128a51b9f37592e8d26a04114ecab939d48407 [36mName=[0mNymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG
+[90m2026-05-08 22:55:56[0m [32m| INFO  |[0m [realdebrid] Torrent: WLSWZYRQJOVXU deleted from RD
+[90m2026-05-08 22:55:57[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.1080p.BRRip.h264.AAC-RARBG submitted to realdebrid [36mid=[0mIB7ZA7WFA4NDI
+[90m2026-05-08 22:55:57[0m [32m| INFO  |[0m [realdebrid] Torrent: IB7ZA7WFA4NDI deleted from RD
+[90m2026-05-08 22:55:59[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mb40b0009a4c041bf7caee7f14c16b78f8f0870f4 [36mName=[0m"Нимфоманка - Часть 2 + Nymphomaniac - Vol. II [2013, Дания, Драма, BDRip 720p] Dub + Original Eng"
+[90m2026-05-08 22:55:59[0m [32m| INFO  |[0m [realdebrid] Torrent: Нимфоманка - Часть 2 + Nymphomaniac - Vol. II [2013, Дания, Драма, BDRip 720p] Dub + Original Eng submitted to realdebrid [36mid=[0m5RNEWE5SDRYWE
+[90m2026-05-08 22:56:00[0m [32m| INFO  |[0m [realdebrid] Torrent: 5RNEWE5SDRYWE deleted from RD
+[90m2026-05-08 22:56:00[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m0dc3a69b4d4c65e4512ab603fd2b29c75353d4f0 [36mName=[0mNymphomaniac.Vol.II.2013.Directors.Cut.720p.BluRay.x264.DTS-RARB
+[90m2026-05-08 22:56:01[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.720p.BluRay.x264.DTS-RARB submitted to realdebrid [36mid=[0m22BO6SOS5UBWG
+[90m2026-05-08 22:56:01[0m [32m| INFO  |[0m [realdebrid] Torrent: 22BO6SOS5UBWG deleted from RD
+[90m2026-05-08 22:56:02[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maaf45cb659fb588c74c7cf7166e25704e0cd9cb3 [36mName=[0m"Nymphomaniac.Vol.II.2013.LIMITED.720p.BluRay.X264-AMIABLE [Publi"
+[90m2026-05-08 22:56:03[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.720p.BluRay.X264-AMIABLE [Publi submitted to realdebrid [36mid=[0mE5WW2M3SV67CS
+[90m2026-05-08 22:56:04[0m [32m| INFO  |[0m [realdebrid] Torrent: E5WW2M3SV67CS deleted from RD
+[90m2026-05-08 22:56:04[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5ef2bdbd15defd3e7497b29d94258d8e4cad2fbd [36mName=[0m"Nymphomaniac Vol II 2013 DC 720p BluRay x264 AAC -Ozlem"
+[90m2026-05-08 22:56:05[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 DC 720p BluRay x264 AAC -Ozlem submitted to realdebrid [36mid=[0m2AER7BQQBZADQ
+[90m2026-05-08 22:56:05[0m [32m| INFO  |[0m [realdebrid] Torrent: 2AER7BQQBZADQ deleted from RD
+[90m2026-05-08 22:56:06[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m0dc3a69b4d4c65e4512ab603fd2b29c75353d4f0 [36mName=[0mNymphomaniac.Vol.II.2013.Directors.Cut.720p.BluRay.x264.DTS-RARB
+[90m2026-05-08 22:56:07[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.Directors.Cut.720p.BluRay.x264.DTS-RARB submitted to realdebrid [36mid=[0mMLIIO2BY4EI2M
+[90m2026-05-08 22:56:08[0m [32m| INFO  |[0m [realdebrid] Torrent: MLIIO2BY4EI2M deleted from RD
+[90m2026-05-08 22:56:08[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0maaf45cb659fb588c74c7cf7166e25704e0cd9cb3 [36mName=[0m"Nymphomaniac.Vol.II.2013.LIMITED.720p.BluRay.X264-AMIABLE [Publi"
+[90m2026-05-08 22:56:09[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac.Vol.II.2013.LIMITED.720p.BluRay.X264-AMIABLE [Publi submitted to realdebrid [36mid=[0mFFLPNKDBBJXZ4
+[90m2026-05-08 22:56:10[0m [32m| INFO  |[0m [realdebrid] Torrent: FFLPNKDBBJXZ4 deleted from RD
+[90m2026-05-08 22:56:10[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5ef2bdbd15defd3e7497b29d94258d8e4cad2fbd [36mName=[0m"Nymphomaniac Vol II 2013 DC 720p BluRay x264 AAC -Ozlem"
+[90m2026-05-08 22:56:13[0m [32m| INFO  |[0m [realdebrid] Torrent: Nymphomaniac Vol II 2013 DC 720p BluRay x264 AAC -Ozlem submitted to realdebrid [36mid=[0mL3XMDJMBIQ5BI
+[90m2026-05-08 22:56:14[0m [32m| INFO  |[0m [realdebrid] Torrent: L3XMDJMBIQ5BI deleted from RD
+[90m2026-05-08 23:06:11[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 23:06:11[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Remarkably.Bright.Creatures.2026.2160p.NF.WEB-DL.DDP.5.1.Atmos.H.265-CHDWEB [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 23:06:12[0m [32m| INFO  |[0m [realdebrid] Torrent: MCZG6FVWK5NGW deleted from RD
+[90m2026-05-08 23:13:11[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 23:13:11[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Âûñòðåë â ïóñòîòó (2017) BDRemux 1080p.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 23:13:11[0m [32m| INFO  |[0m [realdebrid] Torrent: NSPX5NVOD52KU deleted from RD
+[90m2026-05-08 23:14:45[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0me71125b03ac91e30417838764bbe5840a733995c [36mName=[0m"Выстрел в пустоту + Главарь + Shot caller [2017, США, драма, триллер, BDRip 1080p] Dub + AVO + ) + Original (Eng)"
+[90m2026-05-08 23:14:45[0m [32m| INFO  |[0m [realdebrid] Torrent: Выстрел в пустоту + Главарь + Shot caller [2017, США, драма, триллер, BDRip 1080p] Dub + AVO + ) + Original (Eng) submitted to realdebrid [36mid=[0mAUC3UL35FBYSQ
+[90m2026-05-08 23:14:46[0m [32m| INFO  |[0m [realdebrid] Torrent: ??????? ? ??????? (2017) BDRip 1080p.mkv downloaded to RD
+[90m2026-05-08 23:14:46[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 23:20:28[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 23:20:28[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Lorne.2026.1080p.WEBRip.x264.AAC5.1-LAMA.mp4 [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 23:20:28[0m [32m| INFO  |[0m [realdebrid] Torrent: Q6SWJMUGTPJS6 deleted from RD
+[90m2026-05-08 23:20:57[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 23:20:58[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0m6HJTL7EAXPXXQ
+[90m2026-05-08 23:20:58[0m [32m| INFO  |[0m [realdebrid] Torrent: 6HJTL7EAXPXXQ deleted from RD
+[90m2026-05-08 23:20:59[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng"
+[90m2026-05-08 23:20:59[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng submitted to realdebrid [36mid=[0m7XWLDIP4MZWL6
+[90m2026-05-08 23:21:00[0m [32m| INFO  |[0m [realdebrid] Torrent: 7XWLDIP4MZWL6 deleted from RD
+[90m2026-05-08 23:24:35[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m587d8dc5d4644017ed29b420688fb69db8255d09 [36mName=[0m"Тринадцатилетняя + Тринадцать + Thirteen [2003, США, драма, BDRemux 1080p] MVO + VO + Original (Eng) + )"
+[90m2026-05-08 23:24:36[0m [32m| INFO  |[0m [realdebrid] Torrent: Тринадцатилетняя + Тринадцать + Thirteen [2003, США, драма, BDRemux 1080p] MVO + VO + Original (Eng) + ) submitted to realdebrid [36mid=[0mROTEVUKJ5B322
+[90m2026-05-08 23:24:37[0m [32m| INFO  |[0m [realdebrid] Torrent: Тринадцать..2003.Blu-Ray.Remux.(1080p).mkv downloaded to RD
+[90m2026-05-08 23:24:37[0m [32m| INFO  |[0m [decypharr] Creating symlinks for 1 files ...
+[90m2026-05-08 23:40:07[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mshows-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m38095bb1011c06426ddd81731f3a8bf12caf5219 [36mName=[0m"Outlander S08E09 Pharos 720p AMZN WEB-DL DDP5 1 H 264-NTb"
+[90m2026-05-08 23:40:08[0m [32m| INFO  |[0m [realdebrid] Torrent: Outlander S08E09 Pharos 720p AMZN WEB-DL DDP5 1 H 264-NTb submitted to realdebrid [36mid=[0mKV36WMWHDFEMK
+[90m2026-05-08 23:40:08[0m [32m| INFO  |[0m [realdebrid] ERROR Checking file: HTTP error 404: {
+	"error": "unknown_ressource",
+	"error_code": 7
+}
+[90m2026-05-08 23:40:08[0m [32m| INFO  |[0m [realdebrid] Torrent: KV36WMWHDFEMK deleted from RD
+[90m2026-05-08 23:44:46[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 23:44:46[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent ??????? ? ??????? (2017) BDRip 1080p.mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 23:44:46[0m [32m| INFO  |[0m [realdebrid] Torrent: AUC3UL35FBYSQ deleted from RD
+[90m2026-05-08 23:51:23[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng"
+[90m2026-05-08 23:51:24[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания + Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Original Eng submitted to realdebrid [36mid=[0mMZ7COAEJNSHPW
+[90m2026-05-08 23:51:25[0m [32m| INFO  |[0m [realdebrid] Torrent: MZ7COAEJNSHPW deleted from RD
+[90m2026-05-08 23:51:26[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0mdb482218ff4206864498a9a1908614fffe2c47ab [36mName=[0m"Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng"
+[90m2026-05-08 23:51:26[0m [32m| INFO  |[0m [realdebrid] Torrent: Необычайно умные создания _ Remarkably Bright Creatures [2026, США, драма, WEB-DL 720p] Dub (Movie Dubbing) + Sub Rus, Eng + Original Eng submitted to realdebrid [36mid=[0mRL4W473OYLJJI
+[90m2026-05-08 23:51:27[0m [32m| INFO  |[0m [realdebrid] Torrent: RL4W473OYLJJI deleted from RD
+[90m2026-05-08 23:51:27[0m [32m| INFO  |[0m [realdebrid] Processing torrent [36mAction=[0msymlink [36mArr=[0mmovies-1080p [36mDebrid=[0mrealdebrid [36mHash=[0m5e04e4f9490446e04fa6e5fba0a7efd68a147314 [36mName=[0m"Charlie the Wonderdog 2025 1080p BluRay x264-OFT"
+[90m2026-05-08 23:51:28[0m [32m| INFO  |[0m [realdebrid] Torrent: Charlie the Wonderdog 2025 1080p BluRay x264-OFT submitted to realdebrid [36mid=[0m4V2ZUT3XNPGIG
+[90m2026-05-08 23:51:29[0m [32m| INFO  |[0m [realdebrid] Torrent: 4V2ZUT3XNPGIG deleted from RD
+[90m2026-05-08 23:54:37[0m [33m| WARN  |[0m [decypharr] Timeout waiting for files, 1 files still pending
+[90m2026-05-08 23:54:37[0m [31m| ERROR |[0m [decypharr] Error occured while processing torrent Тринадцать..2003.Blu-Ray.Remux.(1080p).mkv [36merror=[0m[31m[1m"timeout waiting for files: 1 files still pending"[0m[0m
+[90m2026-05-08 23:54:37[0m [32m| INFO  |[0m [realdebrid] Torrent: ROTEVUKJ5B322 deleted from RD
