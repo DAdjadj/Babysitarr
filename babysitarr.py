@@ -355,7 +355,83 @@ def arr_add_release_profile_ignore(arr, term, profile_name=RELEASE_PROFILE_NAME)
     return bool(arr_post(arr, "releaseprofile", payload))
 
 _ANSI_RE = re.compile(r'\x1b\[[0-9;]*m')
+_LOG_TS_RE = re.compile(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
 DECYPHARR_LOG_FILE = os.getenv("DECYPHARR_LOG_FILE", "/decypharr-config/logs/decypharr.log")
+
+
+def _read_decypharr_log_tail(window_seconds=1800, max_bytes=500_000, _now=None):
+    """Read the last `max_bytes` of the decypharr log file and return ANSI-
+    stripped lines whose leading timestamp falls within `window_seconds` of
+    `_now` (defaults to wall-clock now). Returns [] if the log is missing or
+    unreadable.
+
+    babysitarr's container has no docker CLI — only the docker socket. We
+    can't shell out to `docker logs`. Instead we read decypharr's rolling
+    file log, which is mounted at /decypharr-config/logs/decypharr.log via
+    the existing config volume.
+
+    `_now` exists for tests: pinning it to a fixture-relative time lets us
+    assert against captured log samples without freezing system time.
+    """
+    if not os.path.exists(DECYPHARR_LOG_FILE):
+        return []
+    try:
+        with open(DECYPHARR_LOG_FILE, "rb") as f:
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            f.seek(max(0, size - max_bytes))
+            tail = f.read().decode("utf-8", errors="replace")
+    except Exception as e:
+        log.warning(f"Could not read decypharr log: {e}")
+        return []
+    now = _now or datetime.now()
+    cutoff = now - timedelta(seconds=window_seconds)
+    out = []
+    for line in tail.split("\n"):
+        plain = _ANSI_RE.sub("", line)
+        m = _LOG_TS_RE.match(plain)
+        if not m:
+            continue
+        try:
+            ts = datetime.strptime(m.group(1), "%Y-%m-%d %H:%M:%S")
+        except ValueError:
+            continue
+        # Both bounds: cutoff <= ts <= now. The upper bound is a no-op in
+        # production (file timestamps can't be in the future) but lets tests
+        # anchor `_now` to a point in the middle of a fixture.
+        if cutoff <= ts <= now:
+            out.append(plain)
+    return out
+
+
+_PROCESSING_HASH_RE = re.compile(r"Hash=([a-f0-9]+)")
+
+
+def _count_processing_hashes(lines):
+    """Given decypharr log lines, return {hash: count} for 'Processing torrent'
+    entries. Hashes are lower-cased hex.
+
+    The log format is decypharr v1.1.6's:
+        ... [realdebrid] Processing torrent Action=symlink Arr=movies-1080p
+            Debrid=realdebrid Hash=aff544...e5 Name="..."
+    A retry of the same release re-emits the same Hash=, so the count of
+    Processing-torrent lines per hash is the retry count.
+
+    ANSI-strips defensively: production logs have color escapes between the
+    field name and the value (`Hash=\\x1b[0m<hex>`), and we want this helper
+    to be safe to call on either pre-stripped or raw lines.
+    """
+    counts = {}
+    for line in lines:
+        plain = _ANSI_RE.sub("", line)
+        if "Processing torrent" not in plain:
+            continue
+        m = _PROCESSING_HASH_RE.search(plain)
+        if not m:
+            continue
+        h = m.group(1).lower()
+        counts[h] = counts.get(h, 0) + 1
+    return counts
 
 def decypharr_lookup_hash(hash_val):
     """Scan the decypharr log file for a hash. Returns (category, release_name) or None.
@@ -548,59 +624,49 @@ def check_stuck_downloads(state):
 # Check 2: Looping torrents (submit → delete → retry)
 # ---------------------------------------------------------------------------
 def check_looping_torrents(state):
-    """Detect torrents that keep getting submitted and deleted on RD."""
+    """Detect torrents that keep getting submitted-and-deleted on Real-Debrid
+    (the classic uncached-release retry storm) and blocklist them in the
+    *arrs once they cross LOOP_THRESHOLD retries.
+
+    Reads decypharr's rolling file log directly. Earlier versions shelled out
+    to `docker logs decypharr` via subprocess, which silently no-op'd in
+    production: the babysitarr container has the docker socket mounted but
+    not the docker CLI binary, so subprocess.run raised FileNotFoundError,
+    the bare except swallowed it, and the function returned 0 actions for
+    months. Retry storms ran unchecked. The tests in tests/test_log_parsing.py
+    guard against future log-format drift.
+    """
     try:
-        r = requests.get(f"{DECYPHARR_URL}/api/v2/torrents/info", timeout=10)
-        torrents = r.json()
+        requests.get(f"{DECYPHARR_URL}/api/v2/torrents/info", timeout=10)
     except Exception:
         return
 
-    # Check decypharr logs for recent delete patterns
-    try:
-        result = subprocess.run(
-            ["docker", "logs", "--since", "30m", "decypharr"],
-            capture_output=True, text=True, timeout=15
-        )
-        logs = result.stdout + result.stderr
-    except Exception:
+    lines = _read_decypharr_log_tail(window_seconds=1800)
+    if not lines:
         return
 
-    # Count delete-after-submit per hash
-    delete_lines = [l for l in logs.split("\n") if "deleted from RD" in l]
-    if not delete_lines:
+    # No deletes in this window means there's no storm to act on right now,
+    # even if Processing lines are flowing for healthy downloads.
+    if not any("deleted from RD" in l for l in lines):
         return
 
-    # Extract hashes from Processing lines before deletes
-    processing_lines = [l for l in logs.split("\n") if "Processing torrent" in l]
-    hash_pattern = re.compile(r'Hash=\x1b\[0m([a-f0-9]+)')
-    hash_counts = {}
-    for line in processing_lines:
-        m = hash_pattern.search(line)
-        if not m:
-            # Try without ANSI
-            m2 = re.search(r'Hash=([a-f0-9]+)', line)
-            if m2:
-                h = m2.group(1)
-                hash_counts[h] = hash_counts.get(h, 0) + 1
-        else:
-            h = m.group(1)
-            hash_counts[h] = hash_counts.get(h, 0) + 1
+    hash_counts = _count_processing_hashes(lines)
 
-    # Merge with persistent loop counts
+    # Persist counts across cycles. Storms span hours but each cycle only
+    # sees the last 30 min of log; without persistence, a hash that retries
+    # 4× per cycle for 2 hours would never cross LOOP_THRESHOLD=5 in a
+    # single window.
     loop_counts = state.get("loop_counts", {})
     for h, count in hash_counts.items():
         loop_counts[h] = loop_counts.get(h, 0) + count
 
-    # Find hashes over threshold
     to_blocklist = {h: c for h, c in loop_counts.items() if c >= LOOP_THRESHOLD}
-
     if not to_blocklist:
         state["loop_counts"] = loop_counts
         return
 
     log.warning(f"Found {len(to_blocklist)} looping torrents (>={LOOP_THRESHOLD} retries)")
 
-    # Remove from arr queues with blocklist
     for arr_name in ARRS:
         queue_data = arr_get_queue(arr_name)
         if not queue_data:
@@ -610,10 +676,12 @@ def check_looping_torrents(state):
             if did in to_blocklist:
                 if arr_remove_queue_item(arr_name, record["id"], blocklist=True):
                     title = record.get("title", "unknown")[:50]
-                    log_action(state, "blocklist_loop", f"Blocklisted looping torrent in {arr_name}: {title} ({to_blocklist[did]} retries)")
-                    # Remove from loop counts since it's handled
-                    del loop_counts[did]
+                    log_action(state, "blocklist_loop",
+                               f"Blocklisted looping torrent in {arr_name}: "
+                               f"{title} ({to_blocklist[did]} retries)")
+                    loop_counts.pop(did, None)
 
+    # Cap stored counts at 3× threshold so the dict doesn't grow forever.
     state["loop_counts"] = {h: c for h, c in loop_counts.items() if c < LOOP_THRESHOLD * 3}
 
 # ---------------------------------------------------------------------------
@@ -623,7 +691,6 @@ _SYMLINK_NAME_RE = re.compile(
     r'timeout waiting for files.*?name=("([^"]+)"|(\S+))',
     re.IGNORECASE,
 )
-_LOG_TS_RE = re.compile(r'^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})')
 _RD_API_BASE = "https://api.real-debrid.com/rest/1.0"
 DECYPHARR_CONFIG_FILE = os.getenv("DECYPHARR_CONFIG_FILE", "/decypharr-config/config.json")
 
