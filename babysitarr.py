@@ -85,7 +85,7 @@ LOOP_THRESHOLD         = int(os.getenv("LOOP_THRESHOLD", "5"))            # retr
 IMPORT_STALL_TIMEOUT   = int(os.getenv("IMPORT_STALL_TIMEOUT", "300"))    # 5 min no imports = stalled
 MAX_WORKERS            = int(os.getenv("MAX_WORKERS", "3"))
 STUCK_QUEUE_TIMEOUT    = int(os.getenv("STUCK_QUEUE_TIMEOUT", "1800"))    # 30 min for stuck queue items
-STUCK_DONE_TIMEOUT     = int(os.getenv("STUCK_DONE_TIMEOUT", "300"))     # 5 min for sizeleft=0 (download done but no import)
+STUCK_DONE_TIMEOUT     = int(os.getenv("STUCK_DONE_TIMEOUT", "900"))     # 15 min for sizeleft=0 (zurg+rclone pipeline needs ~8-10 min)
 STUCK_RETRY_LIMIT      = int(os.getenv("STUCK_RETRY_LIMIT", "5"))
 DEAD_RETRY_LIMIT       = int(os.getenv("DEAD_RETRY_LIMIT", "3"))
 RD_ORPHAN_STRIKES      = int(os.getenv("RD_ORPHAN_STRIKES", "2"))         # strikes before auto-blocking an orphan RD magnet_error
