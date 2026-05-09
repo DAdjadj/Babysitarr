@@ -307,7 +307,7 @@ def arr_delete(arr, path):
         return False
 
 def arr_get_queue(arr, page_size=500):
-    return arr_get(arr, f"queue?page=1&pageSize={page_size}")
+    return arr_get(arr, f"queue?page=1&pageSize={page_size}&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
 
 def arr_get_last_import(arr):
     info = ARRS[arr]
@@ -1022,7 +1022,7 @@ def check_deleted_files(state):
                     if basename not in title_map:
                         for arr_name, info in ARRS.items():
                             try:
-                                queue = arr_get(arr_name, "queue?page=1&pageSize=200")
+                                queue = arr_get(arr_name, "queue?page=1&pageSize=200&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
                                 if not queue:
                                     continue
                                 for rec in queue.get("records", []):
@@ -1592,6 +1592,25 @@ def check_unparseable_imports(state):
                     log.warning(f"  {arr_name}: No media match for {os.path.basename(path)}")
                     continue
 
+                # Check for permanent rejections (e.g. already imported)
+                rejections = mi.get("rejections", [])
+                permanent_rej = [r for r in rejections if r.get("type") == "permanent"]
+                if permanent_rej:
+                    reason = permanent_rej[0].get("reason", "unknown")
+                    log.info(f"  {arr_name}: Skipping {os.path.basename(path)} — {reason}")
+                    # If all files in this item have permanent rejections, remove queue entry
+                    all_rejected = all(
+                        any(r2.get("type") == "permanent" for r2 in mi2.get("rejections", []))
+                        for mi2 in mi_data
+                        if mi2.get("size", 0) >= 50 * 1024 * 1024
+                    )
+                    if all_rejected and not files_to_import:
+                        item_id = item.get("id")
+                        if item_id and arr_remove_queue_item(arr_name, item_id, blocklist=False):
+                            log.info(f"  {arr_name}: Cleared permanently rejected queue entry: {title}")
+                            log_action(state, "auto_clear_rejected", f"Cleared rejected queue entry in {arr_name}: {title}")
+                    continue
+
                 # Use quality from the ManualImport API if available (it parses correctly),
                 # only fall back to inference if the API didn't provide one
                 api_quality = mi.get("quality")
@@ -1683,7 +1702,7 @@ def check_stale_queue(state):
     dead_retries = state.setdefault("dead_retries", {})  # "arr:mediaId" -> count
 
     for arr_name, info in ARRS.items():
-        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true")
+        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
         if not queue_data:
             continue
 
@@ -1694,7 +1713,7 @@ def check_stale_queue(state):
         series_to_search = set()
 
         for r in queue_data.get("records", []):
-            if r.get("trackedDownloadState") != "importPending":
+            if r.get("trackedDownloadState") not in ("importPending", "importBlocked"):
                 continue
 
             # Determine if the media already has a file
@@ -1792,7 +1811,7 @@ def check_stuck_queue_items(state):
     seen_keys = set()
 
     for arr_name, info in ARRS.items():
-        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true")
+        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
         if not queue_data:
             continue
 
@@ -2136,7 +2155,7 @@ def _scan_arr_health():
                 })
 
         # Queue check — identify stale vs missing
-        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true")
+        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
         if queue_data:
             arr_result["queue_total"] = queue_data.get("totalRecords", 0)
             for r in queue_data.get("records", []):
@@ -2214,12 +2233,12 @@ def _handle_action(action, params):
         if arr_name not in ARRS:
             return False, "Unknown arr"
         info = ARRS[arr_name]
-        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true")
+        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
         if not queue_data:
             return False, "Could not fetch queue"
         removed = 0
         for r in queue_data.get("records", []):
-            if r.get("trackedDownloadState") != "importPending":
+            if r.get("trackedDownloadState") not in ("importPending", "importBlocked"):
                 continue
             if info["type"] == "radarr":
                 has_file = r.get("movie", {}).get("hasFile", False)
@@ -2235,14 +2254,14 @@ def _handle_action(action, params):
         if arr_name not in ARRS:
             return False, "Unknown arr"
         info = ARRS[arr_name]
-        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true")
+        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
         if not queue_data:
             return False, "Could not fetch queue"
         removed = 0
         series_to_search = set()
         movies_to_search = []
         for r in queue_data.get("records", []):
-            if r.get("trackedDownloadState") != "importPending":
+            if r.get("trackedDownloadState") not in ("importPending", "importBlocked"):
                 continue
             if info["type"] == "radarr":
                 has_file = r.get("movie", {}).get("hasFile", False)
@@ -2273,14 +2292,14 @@ def _handle_action(action, params):
         if arr_name not in ARRS:
             return False, "Unknown arr"
         info = ARRS[arr_name]
-        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true")
+        queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
         if not queue_data:
             return False, "Could not fetch queue"
         removed = 0
         series_to_search = set()
         movies_to_search = []
         for r in queue_data.get("records", []):
-            if r.get("trackedDownloadState") != "importPending":
+            if r.get("trackedDownloadState") not in ("importPending", "importBlocked"):
                 continue
             if info["type"] == "radarr":
                 has_file = r.get("movie", {}).get("hasFile", False)
