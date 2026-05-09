@@ -106,6 +106,12 @@ DECYPHARR_CPU_WATCHDOG_THRESHOLD = float(os.getenv("DECYPHARR_CPU_WATCHDOG_THRES
 DECYPHARR_CPU_WATCHDOG_CYCLES    = int(os.getenv("DECYPHARR_CPU_WATCHDOG_CYCLES", "3"))         # consecutive over-threshold cycles before restart
 DECYPHARR_CPU_WATCHDOG_COOLDOWN  = int(os.getenv("DECYPHARR_CPU_WATCHDOG_COOLDOWN", "3600"))    # min seconds between watchdog restarts
 
+# Zurg WebDAV config (for path-mismatch fix)
+ZURG_DAV_URL     = os.getenv("ZURG_DAV_URL", "http://172.18.0.1:9999/dav/__all__/")
+ZURG_BASE_PATH   = os.getenv("ZURG_BASE_PATH", "/media/zurg/__all__")
+PATH_MISMATCH_COOLDOWN = int(os.getenv("PATH_MISMATCH_COOLDOWN", "300"))  # min seconds between runs
+_VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".m4v", ".ts", ".wmv"}
+
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -3297,6 +3303,237 @@ def check_decypharr_cpu_watchdog(state):
         )
 
 # ---------------------------------------------------------------------------
+# Check: Decypharr path mismatch (auto-create missing symlinks)
+# ---------------------------------------------------------------------------
+def _zurg_list_dirs():
+    """Fetch top-level directory names from zurg WebDAV."""
+    try:
+        r = requests.get(ZURG_DAV_URL, timeout=60)
+        if not r.ok:
+            log.warning(f"Zurg WebDAV returned HTTP {r.status_code}")
+            return {}
+    except Exception as e:
+        log.warning(f"Could not reach zurg WebDAV: {e}")
+        return {}
+    import urllib.parse
+    dirs = set()
+    for match in re.finditer(r'<d:href>([^<]+)</d:href>', r.text):
+        href = urllib.parse.unquote(match.group(1))
+        if href in ('/__all__', '/__all__/'):
+            continue
+        if href.startswith('/'):
+            href = href.lstrip('/')
+        if href.startswith('__all__/'):
+            href = href[len('__all__/'):]
+        href = href.rstrip('/')
+        if href:
+            dirs.add(href)
+    return dirs
+
+
+def _zurg_find_video(zurg_dir):
+    """Find the main video file inside a zurg directory via PROPFIND."""
+    import urllib.parse
+    encoded = urllib.parse.quote(zurg_dir, safe='')
+    url = ZURG_DAV_URL + encoded + '/'
+    try:
+        r = requests.request('PROPFIND', url, headers={'Depth': '1'}, timeout=15)
+        if not r.ok:
+            return None
+    except Exception:
+        return None
+    files = []
+    for match in re.finditer(r'<d:href>([^<]+)</d:href>', r.text):
+        href = urllib.parse.unquote(match.group(1))
+        fname = href.split('/')[-1]
+        if not fname:
+            continue
+        ext = os.path.splitext(fname)[1].lower()
+        if ext in _VIDEO_EXTS:
+            if not fname.lower().startswith('rarbg') and 'sample' not in fname.lower():
+                files.append(fname)
+    if len(files) == 1:
+        return files[0]
+    elif files:
+        return max(files, key=len)
+    return None
+
+
+def _normalize_torrent_name(name):
+    """Normalize a torrent name for fuzzy matching against zurg dirs."""
+    n = name.lower()
+    for ext in _VIDEO_EXTS:
+        if n.endswith(ext):
+            n = n[:-len(ext)]
+    n = re.sub(r'\[eztvx?\.to\]', '', n)
+    n = re.sub(r'\[eztv\]', '', n)
+    n = re.sub(r'[._\s]+', ' ', n).strip()
+    return n
+
+
+def check_decypharr_path_mismatch(state):
+    """Auto-fix decypharr torrents stuck due to path mismatch.
+
+    Decypharr expects files at __all__/{torrent_name}.{ext} (flat file) but
+    zurg creates __all__/{torrent_name}/{file} (directory containing the file).
+    This causes torrents to time out in the symlink phase (progress=1, no
+    status). We fix them by creating the symlinks that decypharr failed to
+    create, then trigger arr scans so the media gets imported.
+    """
+    last_run = state.get('path_mismatch_last_run', 0)
+    now = time.time()
+    if now - last_run < PATH_MISMATCH_COOLDOWN:
+        return
+
+    # 1. Get stuck torrents from decypharr API
+    try:
+        r = requests.get(f'{DECYPHARR_URL}/api/torrents',
+                         params={'limit': DECYPHARR_API_LIMIT}, timeout=15)
+        if not r.ok:
+            return
+        data = r.json()
+        torrents = data if isinstance(data, list) else (data.get('torrents') or data if isinstance(data, dict) else [])
+        if isinstance(torrents, dict):
+            torrents = list(torrents.values()) if torrents else []
+    except Exception as e:
+        log.warning(f'path_mismatch: could not fetch decypharr torrents: {e}')
+        return
+
+    stuck = [t for t in torrents if t.get('progress') == 1 and not t.get('status')]
+    if not stuck:
+        state['path_mismatch_last_run'] = now
+        return
+
+    # 2. Get zurg directory listing
+    zurg_dirs = _zurg_list_dirs()
+    if not zurg_dirs:
+        log.warning('path_mismatch: could not get zurg directory listing')
+        return
+
+    norm_to_dir = {}
+    for d in zurg_dirs:
+        norm_to_dir[_normalize_torrent_name(d)] = d
+
+    state['path_mismatch_last_run'] = now
+
+    fixed = 0
+    already_ok = 0
+    no_match = 0
+    no_video = 0
+    errors = 0
+    fixed_names = []
+    categories_touched = set()
+
+    for t in stuck:
+        name = t.get('name', '')
+        if not name:
+            continue
+        cat = t.get('category', '') or 'movies-1080p'
+        norm = _normalize_torrent_name(name)
+
+        # Exact match first
+        zurg_dir = norm_to_dir.get(norm)
+
+        # Fuzzy: longest common prefix
+        if not zurg_dir:
+            best = None
+            best_len = 0
+            for key, val in norm_to_dir.items():
+                common = 0
+                for a, b in zip(norm, key):
+                    if a == b:
+                        common += 1
+                    else:
+                        break
+                if common > best_len and common > 20:
+                    best_len = common
+                    best = val
+            if best and best_len > len(norm) * 0.6:
+                zurg_dir = best
+
+        if not zurg_dir:
+            no_match += 1
+            continue
+
+        video_file = _zurg_find_video(zurg_dir)
+        if not video_file:
+            no_video += 1
+            continue
+
+        # Strip video extension from name to get the directory name
+        dir_name = name
+        for ext in _VIDEO_EXTS:
+            if dir_name.lower().endswith(ext):
+                dir_name = dir_name[:-len(ext)]
+                break
+
+        # Map category to download dir (inside babysitarr container: /downloads/{cat})
+        download_dir = os.path.join('/downloads', cat, dir_name)
+        zurg_path = os.path.join(ZURG_BASE_PATH, zurg_dir, video_file)
+        symlink_path = os.path.join(download_dir, video_file)
+
+        if os.path.islink(symlink_path) or os.path.exists(symlink_path):
+            already_ok += 1
+            continue
+
+        try:
+            os.makedirs(download_dir, exist_ok=True)
+            os.symlink(zurg_path, symlink_path)
+            # Set ownership to UID 1000 so radarr/sonarr can read
+            os.lchown(download_dir, 1000, 1000)
+            os.lchown(symlink_path, 1000, 1000)
+            fixed += 1
+            fixed_names.append(name)
+            categories_touched.add(cat)
+            log.info(f'path_mismatch: fixed {name[:80]} -> {zurg_dir}/{video_file}')
+        except Exception as e:
+            log.error(f'path_mismatch: failed to create symlink for {name[:80]}: {e}')
+            errors += 1
+
+    if fixed == 0:
+        if no_match or no_video:
+            log.info(f'path_mismatch: {len(stuck)} stuck, {already_ok} already ok, '
+                     f'{no_match} no zurg match, {no_video} no video found')
+        return
+
+    # 3. Trigger DownloadedMovieScan / DownloadedEpisodeScan in relevant arrs
+    scanned_arrs = []
+    for arr_name, info in ARRS.items():
+        # Match arr to categories
+        arr_cats = []
+        if info['type'] == 'radarr':
+            arr_cats = ['movies-1080p', 'movies-4k']
+        elif info['type'] == 'sonarr':
+            arr_cats = ['shows-1080p', 'shows-4k']
+        if not categories_touched.intersection(arr_cats):
+            continue
+        scan_cmd = 'DownloadedMoviesScan' if info['type'] == 'radarr' else 'DownloadedEpisodesScan'
+        try:
+            arr_post(arr_name, 'command', {'name': scan_cmd})
+            scanned_arrs.append(arr_name)
+        except Exception:
+            pass
+
+    log_action(state, 'path_mismatch_fix',
+               f'Fixed {fixed} stuck symlinks ({already_ok} already ok, '
+               f'{no_match} no match, {no_video} no video, {errors} errors). '
+               "Triggered scan in: " + (", ".join(scanned_arrs) or "none"))
+
+    body_lines = [f'Auto-fixed {fixed} decypharr path-mismatch torrent(s):']
+    for n in fixed_names[:20]:
+        body_lines.append(f'  \u2022 {n[:80]}')
+    if len(fixed_names) > 20:
+        body_lines.append(f'  ... and {len(fixed_names) - 20} more')
+    if scanned_arrs:
+        body_lines.append("\nTriggered DownloadedScan in: " + ", ".join(scanned_arrs))
+    if no_match:
+        body_lines.append(f'\n{no_match} torrent(s) had no matching zurg directory (still being processed by RD)')
+    send_notification('Path mismatch: symlinks fixed', '\n'.join(body_lines), level='info')
+
+
+
+
+# ---------------------------------------------------------------------------
 # Main loop
 # ---------------------------------------------------------------------------
 def main():
@@ -3363,6 +3600,11 @@ def main():
             check_symlink_loops(state)
         except Exception as e:
             log.error(f"check_symlink_loops failed: {e}")
+
+        try:
+            check_decypharr_path_mismatch(state)
+        except Exception as e:
+            log.error(f"check_decypharr_path_mismatch failed: {e}")
 
         # Auto-fix checks run BEFORE stall detection
         try:
