@@ -3362,11 +3362,14 @@ def _zurg_find_video(zurg_dir):
 def _normalize_torrent_name(name):
     """Normalize a torrent name for fuzzy matching against zurg dirs."""
     n = name.lower()
+    # Strip tracker site prefixes (e.g. "www.UIndex.org    -    ", "www.Torrenting.com - ")
+    n = re.sub(r'^www\.[a-z0-9.-]+\s+-\s+', '', n)
     for ext in _VIDEO_EXTS:
         if n.endswith(ext):
             n = n[:-len(ext)]
     n = re.sub(r'\[eztvx?\.to\]', '', n)
     n = re.sub(r'\[eztv\]', '', n)
+    n = re.sub(r'\[rartv\]', '', n)
     n = re.sub(r'[._\s]+', ' ', n).strip()
     return n
 
