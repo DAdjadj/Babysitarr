@@ -101,7 +101,7 @@ ORPHAN_TIMEOUT_SEC      = int(os.getenv("ORPHAN_TIMEOUT_SEC", "1800"))     # dec
 HOST_LOAD_THRESHOLD     = float(os.getenv("HOST_LOAD_THRESHOLD", "200"))   # 1-min loadavg above this = alert (set high; decypharr/rclone/arrs run loadavg 50-150 normally)
 HOST_DSTATE_THRESHOLD   = int(os.getenv("HOST_DSTATE_THRESHOLD", "3"))     # D-state procs above this = alert (the real wedge canary)
 HOST_HEALTH_COOLDOWN    = int(os.getenv("HOST_HEALTH_COOLDOWN", "1800"))   # min seconds between host-health alerts
-EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "v1.1.6")    # alert if decypharr image tag drifts from this; v1.1.6 is the last pre-DFS-stack release (Oct 2024)
+EXPECTED_DECYPHARR_TAG  = os.getenv("EXPECTED_DECYPHARR_TAG", "2.2-stable")  # alert if decypharr image tag drifts from this
 DECYPHARR_CPU_WATCHDOG_THRESHOLD = float(os.getenv("DECYPHARR_CPU_WATCHDOG_THRESHOLD", "80"))  # CPU% for decypharr container
 DECYPHARR_CPU_WATCHDOG_CYCLES    = int(os.getenv("DECYPHARR_CPU_WATCHDOG_CYCLES", "3"))         # consecutive over-threshold cycles before restart
 DECYPHARR_CPU_WATCHDOG_COOLDOWN  = int(os.getenv("DECYPHARR_CPU_WATCHDOG_COOLDOWN", "3600"))    # min seconds between watchdog restarts
@@ -3417,21 +3417,73 @@ def check_decypharr_path_mismatch(state):
     if now - last_run < PATH_MISMATCH_COOLDOWN:
         return
 
-    # 1. Get stuck torrents from decypharr API
+    # 1. Get stuck torrents from decypharr API + scan download dirs
+    api_stuck = []
     try:
         r = requests.get(f'{DECYPHARR_URL}/api/torrents',
                          params={'limit': DECYPHARR_API_LIMIT}, timeout=15)
-        if not r.ok:
-            return
-        data = r.json()
-        torrents = data if isinstance(data, list) else (data.get('torrents') or data if isinstance(data, dict) else [])
-        if isinstance(torrents, dict):
-            torrents = list(torrents.values()) if torrents else []
+        if r.ok:
+            data = r.json()
+            if isinstance(data, list):
+                torrents = data
+            elif isinstance(data, dict):
+                torrents = data.get('torrents', [])
+                if not isinstance(torrents, list):
+                    torrents = []
+            else:
+                torrents = []
+            api_stuck = [t for t in torrents
+                         if isinstance(t, dict) and t.get('progress') == 1
+                         and not t.get('status')]
     except Exception as e:
         log.warning(f'path_mismatch: could not fetch decypharr torrents: {e}')
-        return
 
-    stuck = [t for t in torrents if t.get('progress') == 1 and not t.get('status')]
+    # Also scan download dirs for empty/broken entries (catches cases where
+    # decypharr marks the torrent "downloaded" but the symlink is dangling)
+    fs_stuck = []
+    for dl_dir in DOWNLOAD_DIRS:
+        if not os.path.isdir(dl_dir):
+            continue
+        cat = os.path.basename(dl_dir)
+        try:
+            entries = os.listdir(dl_dir)
+        except OSError:
+            continue
+        for entry in entries:
+            entry_path = os.path.join(dl_dir, entry)
+            if not os.path.isdir(entry_path):
+                continue
+            has_valid_video = False
+            try:
+                for f in os.listdir(entry_path):
+                    fpath = os.path.join(entry_path, f)
+                    ext = os.path.splitext(f)[1].lower()
+                    if ext in _VIDEO_EXTS:
+                        if os.path.islink(fpath) and os.path.exists(fpath):
+                            has_valid_video = True
+                            break
+                        elif not os.path.islink(fpath) and os.path.isfile(fpath):
+                            has_valid_video = True
+                            break
+            except OSError:
+                continue
+            if not has_valid_video:
+                fs_stuck.append({'name': entry, 'category': cat, '_from_fs': True})
+
+    # Merge: API stuck + filesystem-detected broken dirs (deduplicate by name)
+    seen_names = set()
+    stuck = []
+    for t in api_stuck:
+        name = t.get('name', '')
+        if name and name not in seen_names:
+            seen_names.add(name)
+            stuck.append(t)
+    for t in fs_stuck:
+        name = t.get('name', '')
+        if name and name not in seen_names:
+            seen_names.add(name)
+            stuck.append(t)
+
     if not stuck:
         state['path_mismatch_last_run'] = now
         return
