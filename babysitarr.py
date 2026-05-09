@@ -23,7 +23,7 @@ Runs every CHECK_INTERVAL seconds and:
 
 import os, sys, time, json, logging, hashlib, re, smtplib, subprocess, signal
 from email.mime.text import MIMEText
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import requests
 
@@ -362,7 +362,7 @@ DECYPHARR_LOG_FILE = os.getenv("DECYPHARR_LOG_FILE", "/decypharr-config/logs/dec
 def _read_decypharr_log_tail(window_seconds=1800, max_bytes=500_000, _now=None):
     """Read the last `max_bytes` of the decypharr log file and return ANSI-
     stripped lines whose leading timestamp falls within `window_seconds` of
-    `_now` (defaults to wall-clock now). Returns [] if the log is missing or
+    `_now` (defaults to current UTC). Returns [] if the log is missing or
     unreadable.
 
     babysitarr's container has no docker CLI — only the docker socket. We
@@ -370,7 +370,15 @@ def _read_decypharr_log_tail(window_seconds=1800, max_bytes=500_000, _now=None):
     file log, which is mounted at /decypharr-config/logs/decypharr.log via
     the existing config volume.
 
-    `_now` exists for tests: pinning it to a fixture-relative time lets us
+    Decypharr writes timestamps in UTC (its container has TZ=UTC by default
+    while babysitarr's host runs WEST/UTC+1). All comparisons here use naive
+    UTC: the parsed log timestamp is naive-UTC and the default `_now` is
+    UTC-now-stripped-of-tzinfo. Don't replace this with datetime.now() — the
+    naive local-time vs. naive UTC mismatch will silently filter out
+    everything from the live log (a 30-min window from local time will
+    exclude entries that are actually 3 minutes old in UTC).
+
+    `_now` exists for tests: pin it to a fixture-relative naive-UTC time to
     assert against captured log samples without freezing system time.
     """
     if not os.path.exists(DECYPHARR_LOG_FILE):
@@ -384,7 +392,7 @@ def _read_decypharr_log_tail(window_seconds=1800, max_bytes=500_000, _now=None):
     except Exception as e:
         log.warning(f"Could not read decypharr log: {e}")
         return []
-    now = _now or datetime.now()
+    now = _now or datetime.now(timezone.utc).replace(tzinfo=None)
     cutoff = now - timedelta(seconds=window_seconds)
     out = []
     for line in tail.split("\n"):

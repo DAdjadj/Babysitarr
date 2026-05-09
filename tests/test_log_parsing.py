@@ -9,7 +9,7 @@ import os
 import sys
 import types
 import unittest
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -121,6 +121,39 @@ class TestDecypharrLogParsing(unittest.TestCase):
         for line in wide:
             self.assertNotIn("\x1b[", line,
                              "Tail should be ANSI-stripped before return")
+
+    def test_default_now_is_utc_not_local(self):
+        """Decypharr writes UTC timestamps but babysitarr's container runs in
+        a non-UTC timezone (WEST). If the helper used `datetime.now()` the
+        cutoff would silently exclude every line in the live log. Verify the
+        default is UTC-naive by writing a fixture with UTC=now timestamps and
+        confirming the helper picks them up without any `_now=` override."""
+        import tempfile
+        utc_now = datetime.now(timezone.utc).replace(tzinfo=None)
+        # Two lines: one stamped 2 min ago in UTC, one 2 hours ago.
+        recent = (utc_now - timedelta(minutes=2)).strftime("%Y-%m-%d %H:%M:%S")
+        old = (utc_now - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S")
+        body = (f"{recent} | INFO  | [realdebrid] Processing torrent "
+                f"Hash=0123456789abcdef0123456789abcdef01234567 Name=foo\n"
+                f"{old} | INFO  | [realdebrid] Processing torrent "
+                f"Hash=fedcba9876543210fedcba9876543210fedcba98 Name=bar\n")
+        with tempfile.NamedTemporaryFile(
+                "w", suffix=".log", delete=False) as tf:
+            tf.write(body)
+            tmp_path = tf.name
+        try:
+            self.bs.DECYPHARR_LOG_FILE = tmp_path
+            # 30-min window with default _now should include the recent line.
+            lines = self.bs._read_decypharr_log_tail(window_seconds=1800)
+            self.assertEqual(
+                len(lines), 1,
+                f"Expected exactly 1 line in 30-min UTC window; got {lines}. "
+                f"If 0, _read_decypharr_log_tail is using local time and the "
+                f"timezone offset filtered everything out.")
+            self.assertIn(recent, lines[0])
+        finally:
+            os.unlink(tmp_path)
+            self.bs.DECYPHARR_LOG_FILE = str(FIXTURE)
 
     def test_full_pipeline_detects_storm(self):
         """End-to-end: read fixture via _read_decypharr_log_tail, then count
