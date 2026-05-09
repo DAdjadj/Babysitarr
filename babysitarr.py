@@ -3374,6 +3374,35 @@ def _normalize_torrent_name(name):
     return n
 
 
+
+def _build_queue_title_map():
+    """Build a map of downloadId -> (media title, year) from all arr queues.
+
+    When a torrent has a cryptic internal filename (e.g. "maxhd-mip.1080p.mkv"
+    for "Midnight in Paris"), the arr queue knows the actual movie/series title
+    via its media ID. We use this as a fallback for name matching.
+    """
+    title_map = {}
+    for arr_name, info in ARRS.items():
+        queue = arr_get_queue(arr_name)
+        if not queue:
+            continue
+        for rec in queue.get("records", []):
+            dl_id = (rec.get("downloadId") or "").lower()
+            if not dl_id:
+                continue
+            if info["type"] == "radarr":
+                movie = rec.get("movie", {})
+                title = movie.get("title", "")
+                year = movie.get("year", "")
+            else:
+                series = rec.get("series", {})
+                title = series.get("title", "")
+                year = series.get("year", "")
+            if title:
+                title_map[dl_id] = (title, str(year) if year else "")
+    return title_map
+
 def check_decypharr_path_mismatch(state):
     """Auto-fix decypharr torrents stuck due to path mismatch.
 
@@ -3419,6 +3448,9 @@ def check_decypharr_path_mismatch(state):
 
     state['path_mismatch_last_run'] = now
 
+    # Build downloadId -> media title map for fallback matching
+    queue_titles = _build_queue_title_map()
+
     fixed = 0
     already_ok = 0
     no_match = 0
@@ -3455,8 +3487,19 @@ def check_decypharr_path_mismatch(state):
                 zurg_dir = best
 
         if not zurg_dir:
-            no_match += 1
-            continue
+            # Fallback: match via arr queue title (handles cryptic filenames)
+            dl_id = (t.get("info_hash") or "").lower()
+            media_info = queue_titles.get(dl_id) if dl_id else None
+            if media_info:
+                media_title, media_year = media_info
+                search = _normalize_torrent_name(media_title)
+                for key, val in norm_to_dir.items():
+                    if search in key or (media_year and search in key and media_year in key):
+                        zurg_dir = val
+                        break
+            if not zurg_dir:
+                no_match += 1
+                continue
 
         video_file = _zurg_find_video(zurg_dir)
         if not video_file:
