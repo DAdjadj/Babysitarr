@@ -10,8 +10,8 @@ services:
       - ./data:/data
       # Decypharr config (for stuck download detection)
       - /opt/docker/decypharr/config:/decypharr-config
-      # Download directories (read-only)
-      - /media/_decypharr-downloads:/downloads:ro
+      # Download directories (rw for path-mismatch symlink creation)
+      - /media/_decypharr-downloads:/downloads
       # Arr config directories (mounted at ARR_CONFIG_DIR/<name>)
       - /opt/docker/radarr/config:/arr-configs/radarr
       - /opt/docker/radarr4k/config:/arr-configs/radarr4k
