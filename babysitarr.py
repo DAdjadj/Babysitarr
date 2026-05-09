@@ -85,6 +85,8 @@ LOOP_THRESHOLD         = int(os.getenv("LOOP_THRESHOLD", "5"))            # retr
 IMPORT_STALL_TIMEOUT   = int(os.getenv("IMPORT_STALL_TIMEOUT", "300"))    # 5 min no imports = stalled
 MAX_WORKERS            = int(os.getenv("MAX_WORKERS", "3"))
 STUCK_QUEUE_TIMEOUT    = int(os.getenv("STUCK_QUEUE_TIMEOUT", "1800"))    # 30 min for stuck queue items
+STUCK_DONE_TIMEOUT     = int(os.getenv("STUCK_DONE_TIMEOUT", "300"))     # 5 min for sizeleft=0 (download done but no import)
+STUCK_RETRY_LIMIT      = int(os.getenv("STUCK_RETRY_LIMIT", "5"))
 DEAD_RETRY_LIMIT       = int(os.getenv("DEAD_RETRY_LIMIT", "3"))
 RD_ORPHAN_STRIKES      = int(os.getenv("RD_ORPHAN_STRIKES", "2"))         # strikes before auto-blocking an orphan RD magnet_error
 
@@ -1315,6 +1317,14 @@ def check_stale_queue(state):
                 # Clean up any retry tracking for this media
                 retry_key = f"{arr_name}:{media_id}"
                 dead_retries.pop(retry_key, None)
+                # Clear stuck retry counters — media succeeded
+                stuck_retries = state.get("stuck_retries", {})
+                if info["type"] == "radarr":
+                    stuck_retries.pop(f"{arr_name}:movie:{media_id}", None)
+                else:
+                    ep_id = r.get("episodeId") or r.get("episode", {}).get("id")
+                    if ep_id:
+                        stuck_retries.pop(f"{arr_name}:ep:{ep_id}", None)
             else:
                 # Check if download dir is gone (dead entry)
                 msgs = []
@@ -1373,8 +1383,17 @@ def check_stuck_queue_items(state):
 
     Items in 'delay' status with torrentDelay=0, or 'downloading' with no size
     change for STUCK_QUEUE_TIMEOUT seconds, get removed and re-searched.
+
+    Uses STUCK_DONE_TIMEOUT (shorter) when sizeleft=0 — the download finished on
+    RD's side but Decypharr failed to create symlinks, so there's no point waiting
+    the full 30 min.
+
+    Tracks retries per media (movie/episode) to prevent infinite blocklist loops.
+    After STUCK_RETRY_LIMIT failures for the same media, stops re-searching.
+    Retry counters reset after 24h to allow another attempt.
     """
     stuck_tracking = state.setdefault("stuck_queue", {})  # "arr:queueId" -> {"first_seen": ts, "last_sizeleft": n}
+    stuck_retries = state.setdefault("stuck_retries", {})  # "arr:type:mediaId" -> {"count": n, "last_ts": ts}
 
     seen_keys = set()
 
@@ -1393,7 +1412,6 @@ def check_stuck_queue_items(state):
             key = f"{arr_name}:{qid}"
             seen_keys.add(key)
 
-            # Only care about stuck items: delay status, or downloading with no progress
             is_delay = status == "delay"
             is_downloading = dl_state == "downloading"
 
@@ -1403,7 +1421,6 @@ def check_stuck_queue_items(state):
 
             now_ts = time.time()
 
-            # Use the item's 'added' timestamp if available — survives babysitarr restarts
             added_ts = now_ts
             if r.get("added"):
                 try:
@@ -1412,49 +1429,79 @@ def check_stuck_queue_items(state):
                 except Exception:
                     pass
 
+            # Shorter timeout when download is done (sizeleft=0) but arr can't import
+            download_done = is_downloading and sizeleft == 0
+            timeout = STUCK_DONE_TIMEOUT if download_done else STUCK_QUEUE_TIMEOUT
+
             if key not in stuck_tracking:
                 stuck_tracking[key] = {"first_seen": min(now_ts, added_ts), "last_sizeleft": sizeleft}
-                # If already old enough on first sight, don't skip — fall through
-                if (now_ts - min(now_ts, added_ts)) < STUCK_QUEUE_TIMEOUT:
+                if (now_ts - min(now_ts, added_ts)) < timeout:
                     continue
 
             entry = stuck_tracking[key]
             age = now_ts - entry["first_seen"]
 
             if is_downloading and sizeleft < entry["last_sizeleft"]:
-                # Making progress — reset timer
                 entry["first_seen"] = now_ts
                 entry["last_sizeleft"] = sizeleft
                 continue
 
-            if age < STUCK_QUEUE_TIMEOUT:
+            if age < timeout:
                 continue
 
-            # Stuck long enough — remove and re-search
-            log.warning("Stuck queue item in %s: '%s' (status=%s, state=%s, age=%.0fmin). Removing and re-searching.",
-                        arr_name, title, status, dl_state or "none", age / 60)
+            # Resolve media key for per-media retry tracking
+            if info["type"] == "radarr":
+                media_id = r.get("movieId") or r.get("movie", {}).get("id")
+                media_key = f"{arr_name}:movie:{media_id}" if media_id else None
+            else:
+                media_id = r.get("episodeId") or r.get("episode", {}).get("id")
+                media_key = f"{arr_name}:ep:{media_id}" if media_id else None
+
+            retry_info = stuck_retries.get(media_key, {"count": 0, "last_ts": 0}) if media_key else None
+            retry_count = (retry_info["count"] + 1) if retry_info else 1
+            exhausted = media_key and retry_count >= STUCK_RETRY_LIMIT
+
+            reason = "done-no-import" if download_done else "no-progress"
+            log.warning("Stuck queue item in %s: '%s' (status=%s, state=%s, age=%.0fmin, reason=%s, attempt %d/%d).",
+                        arr_name, title, status, dl_state or "none", age / 60, reason,
+                        retry_count, STUCK_RETRY_LIMIT)
 
             if arr_remove_queue_item(arr_name, qid, blocklist=True):
                 stuck_tracking.pop(key, None)
 
-                # Trigger re-search
-                if info["type"] == "radarr":
-                    media_id = r.get("movieId") or r.get("movie", {}).get("id")
-                    if media_id:
-                        arr_post(arr_name, "command", {"name": "MoviesSearch", "movieIds": [media_id]})
-                else:
-                    media_id = r.get("seriesId") or r.get("series", {}).get("id")
-                    if media_id:
-                        arr_post(arr_name, "command", {"name": "SeriesSearch", "seriesId": media_id})
+                if media_key:
+                    stuck_retries[media_key] = {"count": retry_count, "last_ts": now_ts}
 
-                log_action(state, "auto_clear_stuck", f"Removed stuck queue item from {arr_name}: {title} (stuck {age/60:.0f}min)")
+                if exhausted:
+                    log.warning("Media '%s' in %s exhausted %d retries — stopping re-search.", title, arr_name, retry_count)
+                    log_action(state, "stuck_exhausted",
+                               f"Gave up on {title} in {arr_name} after {retry_count} failed downloads — all grabbed releases fail to import. Manual intervention needed.")
+                else:
+                    if info["type"] == "radarr":
+                        mid = r.get("movieId") or r.get("movie", {}).get("id")
+                        if mid:
+                            arr_post(arr_name, "command", {"name": "MoviesSearch", "movieIds": [mid]})
+                    else:
+                        mid = r.get("seriesId") or r.get("series", {}).get("id")
+                        if mid:
+                            arr_post(arr_name, "command", {"name": "SeriesSearch", "seriesId": mid})
+
+                    log_action(state, "auto_clear_stuck",
+                               f"Removed stuck queue item from {arr_name}: {title} (stuck {age/60:.0f}min, attempt {retry_count}/{STUCK_RETRY_LIMIT})")
 
     # Clean up tracking for items no longer in queue
     for k in list(stuck_tracking):
         if k not in seen_keys:
             del stuck_tracking[k]
 
+    # Reset retry counters after 24h cooldown — allows another round of attempts
+    now = time.time()
+    for mk in list(stuck_retries):
+        if now - stuck_retries[mk]["last_ts"] > 86400:
+            del stuck_retries[mk]
+
     state["stuck_queue"] = stuck_tracking
+    state["stuck_retries"] = stuck_retries
 
 
 # ---------------------------------------------------------------------------
@@ -2008,6 +2055,7 @@ class StatusHandler(BaseHTTPRequestHandler):
             "auto_clear_dead": ("Auto-cleared dead + re-searched", "#10b981"),
             "auto_reset_indexers": ("Auto-fixed indexer/list failures", "#10b981"),
             "auto_delete_tmdb": ("Auto-removed TMDb junk", "#10b981"),
+            "stuck_exhausted": ("Gave up — all releases failing", "#ef4444"),
             "ui_clear_stale": ("Cleared stale queue", "#3b82f6"),
             "ui_clear_dead_and_research": ("Cleared dead + re-searched", "#3b82f6"),
             "ui_clear_all_queue": ("Cleared queue + re-searched", "#3b82f6"),
