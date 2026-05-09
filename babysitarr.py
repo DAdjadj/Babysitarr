@@ -3453,7 +3453,7 @@ def check_decypharr_path_mismatch(state):
                 torrents = []
             api_stuck = [t for t in torrents
                          if isinstance(t, dict) and t.get('progress') == 1
-                         and not t.get('status')]
+                         and not t.get('content_path')]
     except Exception as e:
         log.warning(f'path_mismatch: could not fetch decypharr torrents: {e}')
 
@@ -3478,10 +3478,9 @@ def check_decypharr_path_mismatch(state):
                     fpath = os.path.join(entry_path, f)
                     ext = os.path.splitext(f)[1].lower()
                     if ext in _VIDEO_EXTS:
-                        if os.path.islink(fpath) and os.path.exists(fpath):
-                            has_valid_video = True
-                            break
-                        elif not os.path.islink(fpath) and os.path.isfile(fpath):
+                        # Accept symlinks even if target is unresolvable
+                        # (zurg is not mounted inside this container)
+                        if os.path.islink(fpath) or os.path.isfile(fpath):
                             has_valid_video = True
                             break
             except OSError:
@@ -3611,6 +3610,8 @@ def check_decypharr_path_mismatch(state):
         if no_match or no_video:
             log.info(f'path_mismatch: {len(stuck)} stuck, {already_ok} already ok, '
                      f'{no_match} no zurg match, {no_video} no video found')
+        elif stuck:
+            log.debug(f'path_mismatch: {len(stuck)} stuck, all {already_ok} already ok')
         return
 
     # 3. Trigger DownloadedMovieScan / DownloadedEpisodeScan in relevant arrs
