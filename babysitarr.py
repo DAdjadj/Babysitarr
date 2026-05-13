@@ -3637,16 +3637,18 @@ def check_decypharr_path_mismatch(state):
                f'{no_match} no match, {no_video} no video, {errors} errors). '
                "Triggered scan in: " + (", ".join(scanned_arrs) or "none"))
 
-    body_lines = [f'Auto-fixed {fixed} decypharr path-mismatch torrent(s):']
-    for n in fixed_names[:20]:
-        body_lines.append(f'  \u2022 {n[:80]}')
-    if len(fixed_names) > 20:
-        body_lines.append(f'  ... and {len(fixed_names) - 20} more')
-    if scanned_arrs:
-        body_lines.append("\nTriggered DownloadedScan in: " + ", ".join(scanned_arrs))
-    if no_match:
-        body_lines.append(f'\n{no_match} torrent(s) had no matching zurg directory (still being processed by RD)')
-    send_notification('Path mismatch: symlinks fixed', '\n'.join(body_lines), level='info')
+    if errors or no_match:
+        body_lines = [f'Path mismatch: {fixed} fixed, {errors} errors, {no_match} unmatched']
+        for n in fixed_names[:20]:
+            body_lines.append(f'  \u2022 {n[:80]}')
+        if len(fixed_names) > 20:
+            body_lines.append(f'  ... and {len(fixed_names) - 20} more')
+        if scanned_arrs:
+            body_lines.append("\nTriggered DownloadedScan in: " + ", ".join(scanned_arrs))
+        if no_match:
+            body_lines.append(f'\n{no_match} torrent(s) had no matching zurg directory (still being processed by RD)')
+        level = 'alert' if errors else 'info'
+        send_notification('Path mismatch: issues detected', '\n'.join(body_lines), level=level)
 
 
 
