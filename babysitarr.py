@@ -112,6 +112,18 @@ ZURG_BASE_PATH   = os.getenv("ZURG_BASE_PATH", "/media/zurg/__all__")
 PATH_MISMATCH_COOLDOWN = int(os.getenv("PATH_MISMATCH_COOLDOWN", "300"))  # min seconds between runs
 _VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".m4v", ".ts", ".wmv"}
 
+# Zurg serving health: detect the failure where zurg LISTS files but 404s on read
+# (RD disabled the instantAvailability endpoint -> zurg v0.9.3 marks files
+# unavailable -> "File is not available"). zurg's docker healthcheck only pings
+# version.txt so it reports "healthy" through this; we read-test real files instead.
+ZURG_SERVING_CHECK      = os.getenv("ZURG_SERVING_CHECK", "true").lower() in ("1", "true", "yes")
+ZURG_SERVING_SAMPLE     = int(os.getenv("ZURG_SERVING_SAMPLE", "12"))    # files to read-test per cycle
+ZURG_SERVING_MIN_TESTED = int(os.getenv("ZURG_SERVING_MIN_TESTED", "6")) # need this many readable-or-not results to judge
+ZURG_SERVING_FAIL_PCT   = int(os.getenv("ZURG_SERVING_FAIL_PCT", "60"))  # >= this % failing = broken (real failure was ~95%; normal attrition ~3%)
+ZURG_SERVING_BAD_CYCLES = int(os.getenv("ZURG_SERVING_BAD_CYCLES", "2")) # consecutive bad cycles before restart (ignore transient RD blips)
+ZURG_SERVING_COOLDOWN   = int(os.getenv("ZURG_SERVING_COOLDOWN", "900")) # min seconds between zurg restarts
+ZURG_CONTAINER          = os.getenv("ZURG_CONTAINER", "zurg")
+
 # ---------------------------------------------------------------------------
 # Logging
 # ---------------------------------------------------------------------------
@@ -2031,6 +2043,92 @@ def check_container_health(state):
             log.error(f"Failed to auto-restart {cn}")
 
 
+def check_zurg_serving(state):
+    """Detect + auto-heal the zurg failure where it LISTS files but 404s on reads.
+
+    zurg's own docker healthcheck only pings /http/version.txt, so it reports
+    "healthy" even when serving "File is not available" for ~everything (Real-Debrid
+    disabled the instantAvailability endpoint that zurg v0.9.3 relies on). We
+    read-test a random sample of real library files via zurg's WebDAV (which
+    bypasses the rclone cache) and, if a high fraction fail for
+    ZURG_SERVING_BAD_CYCLES consecutive cycles, restart zurg to clear the stale
+    in-memory "unavailable" flags.
+    """
+    if not ZURG_SERVING_CHECK:
+        return
+    import random, urllib.parse
+
+    dirs = _zurg_list_dirs()
+    if not dirs:
+        # zurg unreachable or empty listing; crashes are handled elsewhere
+        log.warning("zurg_serving: zurg listed no dirs (unreachable?) — skipping read-test")
+        return
+
+    sample = random.sample(list(dirs), min(ZURG_SERVING_SAMPLE, len(dirs)))
+    tested = ok = failed = 0
+    for d in sample:
+        fname = _zurg_find_video(d)
+        if not fname:
+            continue
+        url = ZURG_DAV_URL + urllib.parse.quote(d, safe='') + '/' + urllib.parse.quote(fname)
+        try:
+            r = requests.get(url, headers={'Range': 'bytes=0-1023'}, timeout=20)
+            tested += 1
+            if r.status_code in (200, 206) and r.content:
+                ok += 1
+            else:
+                failed += 1
+        except Exception:
+            tested += 1
+            failed += 1
+
+    if tested < ZURG_SERVING_MIN_TESTED:
+        log.info(f"zurg_serving: only {tested} files testable this cycle — skipping judgement")
+        state["zurg_serving_bad_streak"] = 0
+        return
+
+    fail_pct = (failed * 100) // tested
+    log.info(f"zurg_serving: {ok}/{tested} readable, {failed} failed ({fail_pct}%)")
+
+    if fail_pct < ZURG_SERVING_FAIL_PCT:
+        state["zurg_serving_bad_streak"] = 0
+        return
+
+    # high failure — require consecutive bad cycles before acting (ignore transient RD blips)
+    streak = state.get("zurg_serving_bad_streak", 0) + 1
+    state["zurg_serving_bad_streak"] = streak
+    log.warning(f"zurg_serving: HIGH failure {fail_pct}% over {tested} files "
+                f"(streak {streak}/{ZURG_SERVING_BAD_CYCLES})")
+    if streak < ZURG_SERVING_BAD_CYCLES:
+        return
+
+    now = time.time()
+    last = state.get("zurg_serving_last_restart", 0)
+    if now - last < ZURG_SERVING_COOLDOWN:
+        log.info(f"zurg_serving: restart needed but cooldown active "
+                 f"(last restart {int((now - last) / 60)}min ago)")
+        return
+
+    log.warning(f"zurg_serving: {fail_pct}% of {tested} sampled files unreadable for "
+                f"{streak} cycles — restarting {ZURG_CONTAINER}")
+    if docker_restart(ZURG_CONTAINER):
+        state["zurg_serving_last_restart"] = now
+        state["zurg_serving_bad_streak"] = 0
+        log_action(state, "zurg_restart_serving",
+                   f"Restarted {ZURG_CONTAINER}: {fail_pct}% of {tested} sampled files were "
+                   f"unreadable (zurg lists files but 404s on read)")
+        send_notification(
+            "zurg was serving read errors — auto-restarted",
+            f"zurg listed files but {fail_pct}% of {tested} sampled files returned read errors "
+            f"(the 'File is not available' failure). Restarted zurg to clear stale unavailable "
+            f"flags.\n\nIf this recurs, the root cause is zurg v0.9.3 relying on Real-Debrid's "
+            f"disabled instantAvailability endpoint; the permanent fix is upgrading zurg (v0.10+) "
+            f"or migrating the mount off zurg."
+        )
+    else:
+        log.error(f"zurg_serving: failed to restart {ZURG_CONTAINER}")
+
+
 def check_indexer_health(state):
     """Detect and auto-fix indexer/list failures.
 
@@ -3685,6 +3783,11 @@ def main():
             check_container_health(state)
         except Exception as e:
             log.error(f"check_container_health failed: {e}")
+
+        try:
+            check_zurg_serving(state)
+        except Exception as e:
+            log.error(f"check_zurg_serving failed: {e}")
 
         try:
             check_host_health(state)
