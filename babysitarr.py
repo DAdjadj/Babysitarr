@@ -651,7 +651,91 @@ def check_stuck_downloads(state):
 # ---------------------------------------------------------------------------
 # Check 2: Looping torrents (submit → delete → retry)
 # ---------------------------------------------------------------------------
-def _download_has_landed(record):
+def _dir_holds_video(path):
+    """True if path is a release dir containing a video file, or is one itself.
+
+    zurg is not mounted in this container, so a symlink counts without
+    resolving its target (same convention as check_path_mismatch).
+    """
+    try:
+        if os.path.isdir(path):
+            for f in os.listdir(path):
+                if os.path.splitext(f)[1].lower() in _VIDEO_EXTS:
+                    fpath = os.path.join(path, f)
+                    if os.path.islink(fpath) or os.path.isfile(fpath):
+                        return True
+            return False
+        if os.path.splitext(path)[1].lower() in _VIDEO_EXTS:
+            return os.path.islink(path) or os.path.isfile(path)
+    except OSError:
+        pass
+    return False
+
+
+def _release_on_disk(output_path, title=None):
+    """Find a landed release on disk, tolerating decypharr's naming quirks.
+
+    outputPath cannot be trusted verbatim. decypharr often names a torrent with
+    a trailing video extension ("Lurker 2025 ... -OFT.mkv") while the directory
+    it actually creates has none, so the exact path does not exist and a naive
+    check concludes "not downloaded" for a release that is sitting right there.
+    That is precisely how Lurker (4.67 GB, on disk and resolving for 5 minutes)
+    got failed on 2026-08-17. So try the path as given, the path with a phantom
+    video extension stripped, and both forms under each configured download dir.
+    """
+    seen = set()
+    for cand in _candidate_release_paths(output_path, title):
+        if cand and cand not in seen:
+            seen.add(cand)
+            if _dir_holds_video(cand):
+                return cand
+    return None
+
+
+def _candidate_release_paths(output_path, title=None):
+    """Every plausible on-disk location for a release, best guess first."""
+    names = []
+    if output_path:
+        yield output_path
+        stem, ext = os.path.splitext(output_path)
+        if ext.lower() in _VIDEO_EXTS:
+            yield stem
+        names.append(os.path.basename(output_path))
+    if title:
+        names.append(title)
+
+    for name in names:
+        if not name:
+            continue
+        stem, ext = os.path.splitext(name)
+        forms = [name] + ([stem] if ext.lower() in _VIDEO_EXTS else [])
+        for dl_dir in DOWNLOAD_DIRS:
+            for form in forms:
+                yield os.path.join(dl_dir.rstrip("/"), form)
+
+
+def _complete_download_hashes():
+    """info_hashes decypharr considers finished, lowercased.
+
+    Asking the download client directly is the most reliable signal available:
+    it does not depend on the *arr queue record being fresh, nor on guessing
+    where the release landed on disk.
+    """
+    done = set()
+    try:
+        for t in _decypharr_get_torrents():
+            if not isinstance(t, dict):
+                continue
+            if t.get("progress") == 1 or t.get("content_path"):
+                h = (t.get("info_hash") or t.get("hash") or "").lower()
+                if h:
+                    done.add(h)
+    except Exception as e:
+        log.debug(f"Could not list decypharr torrents for loop guard: {e}")
+    return done
+
+
+def _download_has_landed(record, complete_hashes=frozenset()):
     """True when a queue item's release has finished downloading and its files
     are sitting on disk, ready to import.
 
@@ -664,10 +748,8 @@ def _download_has_landed(record):
     Checked cheapest-first:
       1. the download client reports the transfer itself finished
       2. the *arr already holds the files and is deciding what to do with them
-      3. the release dir contains a video file
-
-    zurg is not mounted in this container, so a symlink counts without
-    resolving its target (same convention as check_path_mismatch).
+      3. decypharr reports this hash complete
+      4. the release is findable on disk with a video file in it
     """
     if (record.get("status") or "").lower() == "completed":
         return True
@@ -676,21 +758,11 @@ def _download_has_landed(record):
             "importPending", "importBlocked", "importing", "imported"):
         return True
 
-    out = record.get("outputPath") or ""
-    if not out:
-        return False
-    try:
-        if os.path.isdir(out):
-            for f in os.listdir(out):
-                if os.path.splitext(f)[1].lower() in _VIDEO_EXTS:
-                    fpath = os.path.join(out, f)
-                    if os.path.islink(fpath) or os.path.isfile(fpath):
-                        return True
-        elif os.path.splitext(out)[1].lower() in _VIDEO_EXTS:
-            return os.path.islink(out) or os.path.isfile(out)
-    except OSError:
-        pass
-    return False
+    did = (record.get("downloadId") or "").lower()
+    if did and did in complete_hashes:
+        return True
+
+    return _release_on_disk(record.get("outputPath"), record.get("title")) is not None
 
 
 def check_looping_torrents(state):
@@ -749,6 +821,10 @@ def check_looping_torrents(state):
 
     log.warning(f"Found {len(to_blocklist)} looping torrents (>={LOOP_THRESHOLD} retries)")
 
+    # Fetched once per run rather than per record: the guard consults it for
+    # every candidate, and one API call is enough for all of them.
+    complete_hashes = _complete_download_hashes()
+
     for arr_name in ARRS:
         queue_data = arr_get_queue(arr_name)
         if not queue_data:
@@ -761,7 +837,7 @@ def check_looping_torrents(state):
                 # The retry storm is over the moment the files land. Failing the
                 # release here is what orphaned ~200 finished downloads, so hand
                 # it to the import path (and check_stalled_imports) instead.
-                if _download_has_landed(record):
+                if _download_has_landed(record, complete_hashes):
                     log.info(
                         "loop guard: %s in %s hit %d retries but its download "
                         "has landed (status=%s state=%s) — not blocklisting",
