@@ -651,6 +651,48 @@ def check_stuck_downloads(state):
 # ---------------------------------------------------------------------------
 # Check 2: Looping torrents (submit → delete → retry)
 # ---------------------------------------------------------------------------
+def _download_has_landed(record):
+    """True when a queue item's release has finished downloading and its files
+    are sitting on disk, ready to import.
+
+    Blocklisting one of these is a data-loss bug, not a cleanup: the retry
+    counter says "looping" but the file actually arrived, so failing the
+    release strands a complete download in the download dir and the episode or
+    movie silently stays missing from the library. A 2026-08-15 sweep found
+    196 items (0.92 TB) lost this way, going back months.
+
+    Checked cheapest-first:
+      1. the download client reports the transfer itself finished
+      2. the *arr already holds the files and is deciding what to do with them
+      3. the release dir contains a video file
+
+    zurg is not mounted in this container, so a symlink counts without
+    resolving its target (same convention as check_path_mismatch).
+    """
+    if (record.get("status") or "").lower() == "completed":
+        return True
+
+    if (record.get("trackedDownloadState") or "") in (
+            "importPending", "importBlocked", "importing", "imported"):
+        return True
+
+    out = record.get("outputPath") or ""
+    if not out:
+        return False
+    try:
+        if os.path.isdir(out):
+            for f in os.listdir(out):
+                if os.path.splitext(f)[1].lower() in _VIDEO_EXTS:
+                    fpath = os.path.join(out, f)
+                    if os.path.islink(fpath) or os.path.isfile(fpath):
+                        return True
+        elif os.path.splitext(out)[1].lower() in _VIDEO_EXTS:
+            return os.path.islink(out) or os.path.isfile(out)
+    except OSError:
+        pass
+    return False
+
+
 def check_looping_torrents(state):
     """Detect torrents that keep getting submitted-and-deleted on Real-Debrid
     (the classic uncached-release retry storm) and blocklist them in the
@@ -688,6 +730,18 @@ def check_looping_torrents(state):
     for h, count in hash_counts.items():
         loop_counts[h] = loop_counts.get(h, 0) + count
 
+    # Decay anything that did not retry in this window. Counts previously only
+    # ever grew, so after enough cycles nearly every hash that had *ever*
+    # retried sat permanently above the threshold — 7,564 of them by Aug 2026,
+    # every one armed to be blocklisted the moment it reappeared in a queue.
+    # Decaying makes this a measure of *currently* looping torrents while still
+    # spanning cycles, which is why the counts are persisted at all.
+    for h in list(loop_counts):
+        if h not in hash_counts:
+            loop_counts[h] -= 1
+            if loop_counts[h] <= 0:
+                del loop_counts[h]
+
     to_blocklist = {h: c for h, c in loop_counts.items() if c >= LOOP_THRESHOLD}
     if not to_blocklist:
         state["loop_counts"] = loop_counts
@@ -702,8 +756,21 @@ def check_looping_torrents(state):
         for record in queue_data.get("records", []):
             did = (record.get("downloadId") or "").lower()
             if did in to_blocklist:
+                title = record.get("title", "unknown")[:50]
+
+                # The retry storm is over the moment the files land. Failing the
+                # release here is what orphaned ~200 finished downloads, so hand
+                # it to the import path (and check_stalled_imports) instead.
+                if _download_has_landed(record):
+                    log.info(
+                        "loop guard: %s in %s hit %d retries but its download "
+                        "has landed (status=%s state=%s) — not blocklisting",
+                        title, arr_name, to_blocklist[did],
+                        record.get("status"), record.get("trackedDownloadState"))
+                    loop_counts.pop(did, None)
+                    continue
+
                 if arr_remove_queue_item(arr_name, record["id"], blocklist=True):
-                    title = record.get("title", "unknown")[:50]
                     log_action(state, "blocklist_loop",
                                f"Blocklisted looping torrent in {arr_name}: "
                                f"{title} ({to_blocklist[did]} retries)")
