@@ -122,6 +122,85 @@ class TestDownloadHasLanded(unittest.TestCase):
                  "outputPath": f}))
 
 
+class TestDecypharrNamingQuirk(unittest.TestCase):
+    """The 2026-08-17 regression: decypharr named the torrent
+    "Lurker 2025 1080p BluRay x264-OFT.mkv" so radarr's outputPath carried a
+    trailing .mkv, but the directory decypharr actually created has no
+    extension. The exact path did not exist, the guard said "not downloaded",
+    and a 4.67 GB release that had been on disk for five minutes was failed.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bs = _import_babysitarr()
+
+    def setUp(self):
+        self.td = tempfile.TemporaryDirectory()
+        self.dl = os.path.join(self.td.name, "movies-1080p")
+        os.makedirs(self.dl)
+        self._saved = self.bs.DOWNLOAD_DIRS
+        self.bs.DOWNLOAD_DIRS = [self.dl]
+
+    def tearDown(self):
+        self.bs.DOWNLOAD_DIRS = self._saved
+        self.td.cleanup()
+
+    def _make_release(self, folder_name, video_name):
+        d = os.path.join(self.dl, folder_name)
+        os.makedirs(d)
+        os.symlink(f"/media/zurg/__all__/{folder_name}/{video_name}",
+                   os.path.join(d, video_name))
+        return d
+
+    def test_phantom_mkv_suffix_on_output_path(self):
+        name = "Lurker 2025 1080p BluRay x264-OFT"
+        self._make_release(name, f"{name}.mkv")
+        record = {
+            "title": f"{name}.mkv",
+            "status": "downloading",
+            "trackedDownloadState": "downloading",
+            # the path radarr reported: folder name + a phantom .mkv
+            "outputPath": os.path.join(self.dl, f"{name}.mkv"),
+        }
+        self.assertTrue(self.bs._download_has_landed(record),
+                        "release on disk must be found despite the phantom .mkv")
+
+    def test_found_via_title_when_output_path_is_wrong(self):
+        name = "Some Movie 2025 1080p BluRay x264-OFT"
+        self._make_release(name, f"{name}.mkv")
+        record = {
+            "title": f"{name}.mkv",
+            "status": "downloading",
+            "trackedDownloadState": "downloading",
+            "outputPath": "/downloads/somewhere/else/entirely",
+        }
+        self.assertTrue(self.bs._download_has_landed(record),
+                        "should fall back to locating the release by title")
+
+    def test_genuinely_absent_release_still_not_landed(self):
+        record = {
+            "title": "Never Downloaded 2025 1080p-NOPE.mkv",
+            "status": "downloading",
+            "trackedDownloadState": "downloading",
+            "outputPath": os.path.join(self.dl, "Never Downloaded 2025 1080p-NOPE.mkv"),
+        }
+        self.assertFalse(self.bs._download_has_landed(record))
+
+    def test_decypharr_reporting_complete_is_enough(self):
+        """Even with nothing on disk and a stale queue record, decypharr saying
+        the hash is finished must stop the blocklist."""
+        h = "abc123def456"
+        record = {
+            "title": "Whatever.mkv",
+            "status": "downloading",
+            "trackedDownloadState": "downloading",
+            "downloadId": h.upper(),
+            "outputPath": "/downloads/nope",
+        }
+        self.assertTrue(self.bs._download_has_landed(record, frozenset({h})))
+        self.assertFalse(self.bs._download_has_landed(record, frozenset()))
+
+
 class TestLoopCountDecay(unittest.TestCase):
     """The counts must fall for hashes that are no longer retrying, otherwise
     they stay above LOOP_THRESHOLD forever and arm a blocklist on reappearance.
