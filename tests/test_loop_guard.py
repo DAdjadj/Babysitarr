@@ -295,3 +295,70 @@ class TestStuckQueueDoesNotFailLandedDownloads(unittest.TestCase):
         src = inspect.getsource(self.bs.check_stuck_queue_items)
         self.assertIn('_release_on_disk(r.get("outputPath"), title)', src)
         self.assertIn('"path": landed', src)
+
+
+class TestAllBlocklistPathsAreGuarded(unittest.TestCase):
+    """Every code path that can fail a release must check reality first.
+
+    Fixing them one at a time was the mistake: check_looping_torrents was
+    guarded on 2026-08-17, then check_stuck_queue_items stranded four episodes
+    six minutes after that guard had spared them. These assertions fail if a new
+    unguarded blocklist=True call site is ever introduced.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bs = _import_babysitarr()
+        cls.src = (REPO_ROOT / "babysitarr.py").read_text()
+
+    def _fn_source(self, name):
+        import inspect
+        return inspect.getsource(getattr(self.bs, name))
+
+    def test_every_blocklisting_function_consults_the_guard(self):
+        """Any function that CALLS arr_remove_queue_item(blocklist=True) must also
+        check whether the files landed.
+
+        Detected via AST call nodes rather than a text search, so the helper's own
+        `blocklist=True` default parameter is not mistaken for a call site.
+        """
+        import ast
+        tree = ast.parse(self.src)
+        offenders = []
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.FunctionDef):
+                continue
+            blocklists = False
+            for inner in ast.walk(node):
+                if not isinstance(inner, ast.Call):
+                    continue
+                fname = getattr(inner.func, "id", None) or getattr(inner.func, "attr", None)
+                if fname != "arr_remove_queue_item":
+                    continue
+                for kw in inner.keywords:
+                    if (kw.arg == "blocklist"
+                            and isinstance(kw.value, ast.Constant)
+                            and kw.value.value is True):
+                        blocklists = True
+            if not blocklists:
+                continue
+            body = ast.get_source_segment(self.src, node) or ""
+            if not ("_download_has_landed" in body or "_release_on_disk" in body):
+                offenders.append(node.name)
+        self.assertEqual(offenders, [],
+                         f"these fail releases without checking if files landed: {offenders}")
+
+    def test_known_blocklisting_functions_are_all_covered(self):
+        for fn in ("check_looping_torrents", "check_symlink_loops",
+                   "check_stale_queue", "check_stuck_queue_items"):
+            with self.subTest(fn=fn):
+                body = self._fn_source(fn)
+                self.assertTrue(
+                    "_download_has_landed" in body or "_release_on_disk" in body,
+                    f"{fn} can fail a release without checking disk")
+
+    def test_hash_lookup_is_not_per_record(self):
+        """One decypharr call per run, not one per queue item."""
+        for fn in ("check_looping_torrents", "check_symlink_loops", "check_stale_queue"):
+            with self.subTest(fn=fn):
+                self.assertEqual(self._fn_source(fn).count("_complete_download_hashes()"), 1)
