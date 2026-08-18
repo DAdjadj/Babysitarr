@@ -1027,6 +1027,7 @@ def check_symlink_loops(state):
             log.error(f"Failed to update decypharr torrents.json: {e}")
 
     # 2. Blocklist matching items in arr queues so the arr grabs a different release
+    complete_hashes = _complete_download_hashes()
     for arr_name in ARRS:
         queue_data = arr_get_queue(arr_name)
         if not queue_data:
@@ -1036,6 +1037,16 @@ def check_symlink_loops(state):
             for stuck_name in list(over.keys()):
                 stuck_base = stuck_name.rsplit(".", 1)[0]
                 if stuck_base and stuck_base in title:
+                    # A timeout count says the symlink was slow, not that it never
+                    # arrived. Failing a release whose files are now present is the
+                    # data-loss bug the loop guard exists to stop, so check reality
+                    # first here too.
+                    if _download_has_landed(record, complete_hashes):
+                        log.info("symlink-loop guard: %s in %s had %d timeouts but its "
+                                 "download has landed — not blocklisting",
+                                 title[:60], arr_name, over[stuck_name])
+                        handled.add(stuck_name)
+                        continue
                     if arr_remove_queue_item(arr_name, record["id"], blocklist=True):
                         log_action(state, "blocklist_symlink_loop",
                                    f"Blocklisted symlink-loop torrent in {arr_name}: {title[:80]}")
@@ -1858,6 +1869,9 @@ def check_stale_queue(state):
     different one on the next search.
     """
     dead_retries = state.setdefault("dead_retries", {})  # "arr:mediaId" -> count
+    # Fetched once for the whole run, not per record: the guard below consults it
+    # for every dead-entry candidate and one API call covers them all.
+    complete_hashes = _complete_download_hashes()
 
     for arr_name, info in ARRS.items():
         queue_data = arr_get(arr_name, "queue?page=1&pageSize=200&includeEpisode=true&includeSeries=true&includeUnknownMovieItems=true&includeUnknownSeriesItems=true")
@@ -1908,6 +1922,17 @@ def check_stale_queue(state):
                     dead_retries[retry_key] = count
 
                     if count >= DEAD_RETRY_LIMIT:
+                        # "No files found are eligible" can also mean the arr simply
+                        # cannot see files that are in fact there (see the phantom
+                        # outputPath extension that lost Lurker). Never fail a
+                        # release we can still find on disk.
+                        if _download_has_landed(r, complete_hashes):
+                            log.info("stale-queue guard: %s in %s reported no eligible "
+                                     "files after %d retries but its download has "
+                                     "landed — not blocklisting",
+                                     (r.get("title") or "?")[:60], arr_name, count)
+                            dead_retries.pop(retry_key, None)
+                            continue
                         # Too many retries — blocklist this release so a different one is picked
                         if arr_remove_queue_item(arr_name, r["id"], blocklist=True):
                             dead_blocklisted += 1
