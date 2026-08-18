@@ -252,3 +252,46 @@ class TestLoopCountDecay(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestStuckQueueDoesNotFailLandedDownloads(unittest.TestCase):
+    """check_stuck_queue_items was a second route to the same data loss.
+
+    On 2026-08-17 the loop guard correctly spared Bluey S02E50 and S02E52,
+    The Pitt S02E05 and From S04E02, all reported "has landed". Six minutes
+    later this check blocklisted all four with reason=done-no-import and
+    stranded them. A landed release must never be failed or deleted here.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.bs = _import_babysitarr()
+
+    def test_remove_queue_item_can_keep_the_download(self):
+        """removeFromClient=false is what stops a good release being deleted."""
+        import inspect
+        sig = inspect.signature(self.bs.arr_remove_queue_item)
+        self.assertIn("remove_from_client", sig.parameters)
+        self.assertTrue(sig.parameters["remove_from_client"].default)
+
+    def test_landed_branch_never_blocklists(self):
+        """Static guard: inside the landed branch nothing may blocklist."""
+        import inspect, re
+        src = inspect.getsource(self.bs.check_stuck_queue_items)
+        start = src.index("if landed:")
+        end = src.index("if arr_remove_queue_item(arr_name, qid, blocklist=True)")
+        branch = src[start:end]
+        self.assertNotIn("blocklist=True", branch,
+                         "the landed branch must never mark a release failed")
+        self.assertIn("remove_from_client=False", branch,
+                      "the landed branch must never delete the download")
+        self.assertRegex(branch, r"Downloaded(Movies|Episodes)Scan",
+                         "the landed branch should ask the arr to rescan")
+
+    def test_scan_targets_the_resolved_dir_not_the_raw_output_path(self):
+        """The rescan must use the resolved directory, since outputPath can
+        carry the phantom extension that caused the Lurker loss."""
+        import inspect
+        src = inspect.getsource(self.bs.check_stuck_queue_items)
+        self.assertIn('_release_on_disk(r.get("outputPath"), title)', src)
+        self.assertIn('"path": landed', src)
