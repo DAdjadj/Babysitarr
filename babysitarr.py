@@ -329,9 +329,12 @@ def arr_get_last_import(arr):
         return data["records"][0]["date"]
     return None
 
-def arr_remove_queue_item(arr, item_id, blocklist=True):
+def arr_remove_queue_item(arr, item_id, blocklist=True, remove_from_client=True):
+    """Drop a queue item. remove_from_client=False keeps the download (and its
+    symlink) in place, which matters when the files are fine and only the import
+    failed: deleting them would destroy a complete release."""
     info = ARRS[arr]
-    url = f"http://{info['host']}:{info['port']}/api/v3/queue/{item_id}?removeFromClient=true&blocklist={'true' if blocklist else 'false'}&skipRedownload=true&apikey={info['key']}"
+    url = f"http://{info['host']}:{info['port']}/api/v3/queue/{item_id}?removeFromClient={'true' if remove_from_client else 'false'}&blocklist={'true' if blocklist else 'false'}&skipRedownload=true&apikey={info['key']}"
     try:
         r = requests.delete(url, timeout=15)
         return r.ok
@@ -2035,6 +2038,40 @@ def check_stuck_queue_items(state):
                         arr_name, title, status, dl_state or "none", age / 60, reason,
                         retry_count, STUCK_RETRY_LIMIT)
 
+            # The files arrived, only the import did not happen. Failing the
+            # release here is the same data-loss bug the loop guard prevents,
+            # just via a different route: check_looping_torrents correctly spared
+            # "Bluey S02E50/S02E52", "The Pitt S02E05" and "From S04E02" on
+            # 2026-08-17, then this check blocklisted all four six minutes later
+            # and stranded them. So ask the *arr to scan the release it already
+            # has instead of grabbing a replacement it does not need.
+            landed = _release_on_disk(r.get("outputPath"), title) if download_done else None
+            if landed:
+                if not exhausted:
+                    scan = ("DownloadedMoviesScan" if info["type"] == "radarr"
+                            else "DownloadedEpisodesScan")
+                    arr_post(arr_name, "command", {"name": scan, "path": landed,
+                                                   "importMode": "Move"})
+                    if media_key:
+                        stuck_retries[media_key] = {"count": retry_count, "last_ts": now_ts}
+                    log_action(state, "rescan_landed",
+                               f"{title} in {arr_name} finished downloading but did not "
+                               f"import; rescanned {landed} instead of failing it "
+                               f"(attempt {retry_count}/{STUCK_RETRY_LIMIT})")
+                    continue
+
+                # Out of attempts. Still never blocklist and never delete: the
+                # release is intact, so clear the queue entry and leave the files
+                # for a manual import rather than throwing them away.
+                if arr_remove_queue_item(arr_name, qid, blocklist=False,
+                                         remove_from_client=False):
+                    stuck_tracking.pop(key, None)
+                    log_action(state, "stuck_exhausted",
+                               f"{title} in {arr_name} will not import after "
+                               f"{retry_count} attempts. Files are intact at {landed} "
+                               f"and were NOT failed or deleted. Needs a manual import.")
+                continue
+
             if arr_remove_queue_item(arr_name, qid, blocklist=True):
                 stuck_tracking.pop(key, None)
 
@@ -2715,6 +2752,7 @@ class StatusHandler(BaseHTTPRequestHandler):
             "rd_orphan_blocked": ("Auto-blocked orphan RD release", "#10b981"),
             "search_missing": ("Triggered missing search", "#10b981"),
             "auto_import": ("Auto-imported", "#10b981"),
+            "rescan_landed": ("Rescanned a landed download", "#10b981"),
             "auto_clear_stale": ("Auto-cleared stale queue", "#10b981"),
             "auto_clear_dead": ("Auto-cleared dead + re-searched", "#10b981"),
             "auto_reset_indexers": ("Auto-fixed indexer/list failures", "#10b981"),
