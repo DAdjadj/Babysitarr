@@ -35,6 +35,7 @@ RD_API_KEY       = os.getenv("RD_API_KEY", "")
 DECYPHARR_URL    = os.getenv("DECYPHARR_URL", "http://localhost:8282")
 DECYPHARR_STATE  = os.getenv("DECYPHARR_STATE", "/decypharr-config/torrents.json")
 DOWNLOAD_DIRS    = os.getenv("DOWNLOAD_DIRS", "/downloads/movies-1080p,/downloads/movies-4k,/downloads/shows-1080p,/downloads/shows-4k").split(",")
+DOWNLOAD_ROOT    = os.getenv("DOWNLOAD_ROOT", "/downloads")  # as the arrs and decypharr see it
 DOCKER_SOCKET    = os.getenv("DOCKER_SOCKET", "/var/run/docker.sock")
 DATA_DIR         = os.getenv("DATA_DIR", "/data")
 
@@ -110,6 +111,9 @@ DECYPHARR_CPU_WATCHDOG_COOLDOWN  = int(os.getenv("DECYPHARR_CPU_WATCHDOG_COOLDOW
 ZURG_DAV_URL     = os.getenv("ZURG_DAV_URL", "http://172.18.0.1:9999/dav/__all__/")
 ZURG_BASE_PATH   = os.getenv("ZURG_BASE_PATH", "/media/zurg/__all__")
 PATH_MISMATCH_COOLDOWN = int(os.getenv("PATH_MISMATCH_COOLDOWN", "300"))  # min seconds between runs
+PATH_MISMATCH_MAX_FIXES = int(os.getenv("PATH_MISMATCH_MAX_FIXES", "2"))  # repairs per release before giving up
+PATH_MISMATCH_UNMATCHED_ALERT = int(os.getenv("PATH_MISMATCH_UNMATCHED_ALERT", "20"))  # runs unmatched before alerting
+PATH_MISMATCH_STALE_AGE = int(os.getenv("PATH_MISMATCH_STALE_AGE", "3600"))  # age before an empty leftover folder is removed
 _VIDEO_EXTS = {".mkv", ".mp4", ".avi", ".m4v", ".ts", ".wmv"}
 
 # Zurg serving health: detect the failure where zurg LISTS files but 404s on read
@@ -3726,6 +3730,36 @@ def _build_queue_title_map():
                 title_map[dl_id] = (title, str(year) if year else "")
     return title_map
 
+def _path_mismatch_release_dir(name, cat):
+    """Download folder decypharr would have created for a release."""
+    dir_name = name
+    for ext in _VIDEO_EXTS:
+        if dir_name.lower().endswith(ext):
+            dir_name = dir_name[:-len(ext)]
+            break
+    return os.path.join(DOWNLOAD_ROOT, cat, dir_name)
+
+
+def _path_mismatch_retire(name, cat):
+    """Drop the leftover folder of a release we have stopped repairing.
+
+    Only ever removes an *empty* directory untouched for PATH_MISMATCH_STALE_AGE,
+    so a download still in flight is never disturbed. Left in place the folder
+    would be rescanned as "stuck" on every run, forever.
+    """
+    path = _path_mismatch_release_dir(name, cat)
+    try:
+        if not os.path.isdir(path) or os.listdir(path):
+            return False
+        if time.time() - os.path.getmtime(path) < PATH_MISMATCH_STALE_AGE:
+            return False
+        os.rmdir(path)
+    except OSError:
+        return False
+    log.info(f'path_mismatch: removed empty leftover folder {path}')
+    return True
+
+
 def check_decypharr_path_mismatch(state):
     """Auto-fix decypharr torrents stuck due to path mismatch.
 
@@ -3734,6 +3768,13 @@ def check_decypharr_path_mismatch(state):
     This causes torrents to time out in the symlink phase (progress=1, no
     status). We fix them by creating the symlinks that decypharr failed to
     create, then trigger arr scans so the media gets imported.
+
+    Each release is only ever repaired PATH_MISMATCH_MAX_FIXES times. An arr
+    that imports with "move" relocates our symlink into the library and leaves
+    the release folder empty, which looks exactly like the stall we repair, so
+    without the cap the two chase each other: Pirates of the Caribbean ran
+    5,313 import/delete rounds between 2026-08-17 and 2026-09-10, one every
+    ~6.5 minutes, and used up the alert-email budget while doing it.
     """
     last_run = state.get('path_mismatch_last_run', 0)
     now = time.time()
@@ -3806,9 +3847,21 @@ def check_decypharr_path_mismatch(state):
             seen_names.add(name)
             stuck.append(t)
 
+    fix_counts = state.setdefault('path_mismatch_fixes', {})
+    unmatched_runs = state.setdefault('path_mismatch_unmatched', {})
+
     if not stuck:
+        # Nothing is stalled any more, so forget everything we were tracking.
+        fix_counts.clear()
+        unmatched_runs.clear()
         state['path_mismatch_last_run'] = now
         return
+
+    # A release that stopped reporting stuck has settled: drop its counters so
+    # a genuine stall later on starts from a clean slate.
+    for tracker in (fix_counts, unmatched_runs):
+        for gone in [n for n in tracker if n not in seen_names]:
+            del tracker[gone]
 
     # 2. Get zurg directory listing
     zurg_dirs = _zurg_list_dirs()
@@ -3830,14 +3883,25 @@ def check_decypharr_path_mismatch(state):
     no_match = 0
     no_video = 0
     errors = 0
+    given_up = 0
     fixed_names = []
+    persistent_unmatched = []
     categories_touched = set()
+    scanned_arrs = []
 
     for t in stuck:
         name = t.get('name', '')
         if not name:
             continue
         cat = t.get('category', '') or 'movies-1080p'
+
+        if fix_counts.get(name, 0) >= PATH_MISMATCH_MAX_FIXES:
+            # Already repaired and it came straight back. Repairing it again
+            # only feeds an import/delete loop with the arr.
+            given_up += 1
+            _path_mismatch_retire(name, cat)
+            continue
+
         norm = _normalize_torrent_name(name)
 
         # Exact match first
@@ -3873,22 +3937,22 @@ def check_decypharr_path_mismatch(state):
                         break
             if not zurg_dir:
                 no_match += 1
+                # Usually RD is still unpacking, which resolves on its own.
+                # Only worth a human's attention once it has dragged on.
+                streak = unmatched_runs.get(name, 0) + 1
+                unmatched_runs[name] = streak
+                if streak == PATH_MISMATCH_UNMATCHED_ALERT:
+                    persistent_unmatched.append(name)
                 continue
+
+        unmatched_runs.pop(name, None)
 
         video_file = _zurg_find_video(zurg_dir)
         if not video_file:
             no_video += 1
             continue
 
-        # Strip video extension from name to get the directory name
-        dir_name = name
-        for ext in _VIDEO_EXTS:
-            if dir_name.lower().endswith(ext):
-                dir_name = dir_name[:-len(ext)]
-                break
-
-        # Map category to download dir (inside babysitarr container: /downloads/{cat})
-        download_dir = os.path.join('/downloads', cat, dir_name)
+        download_dir = _path_mismatch_release_dir(name, cat)
         zurg_path = os.path.join(ZURG_BASE_PATH, zurg_dir, video_file)
         symlink_path = os.path.join(download_dir, video_file)
 
@@ -3903,6 +3967,7 @@ def check_decypharr_path_mismatch(state):
             os.lchown(download_dir, 1000, 1000)
             os.lchown(symlink_path, 1000, 1000)
             fixed += 1
+            fix_counts[name] = fix_counts.get(name, 0) + 1
             fixed_names.append(name)
             categories_touched.add(cat)
             log.info(f'path_mismatch: fixed {name[:80]} -> {zurg_dir}/{video_file}')
@@ -3910,38 +3975,40 @@ def check_decypharr_path_mismatch(state):
             log.error(f'path_mismatch: failed to create symlink for {name[:80]}: {e}')
             errors += 1
 
-    if fixed == 0:
-        if no_match or no_video:
-            log.info(f'path_mismatch: {len(stuck)} stuck, {already_ok} already ok, '
-                     f'{no_match} no zurg match, {no_video} no video found')
-        elif stuck:
-            log.debug(f'path_mismatch: {len(stuck)} stuck, all {already_ok} already ok')
-        return
-
     # 3. Trigger DownloadedMovieScan / DownloadedEpisodeScan in relevant arrs
-    scanned_arrs = []
-    for arr_name, info in ARRS.items():
-        # Match arr to categories
-        arr_cats = []
-        if info['type'] == 'radarr':
-            arr_cats = ['movies-1080p', 'movies-4k']
-        elif info['type'] == 'sonarr':
-            arr_cats = ['shows-1080p', 'shows-4k']
-        if not categories_touched.intersection(arr_cats):
-            continue
-        scan_cmd = 'DownloadedMoviesScan' if info['type'] == 'radarr' else 'DownloadedEpisodesScan'
-        try:
-            arr_post(arr_name, 'command', {'name': scan_cmd})
-            scanned_arrs.append(arr_name)
-        except Exception:
-            pass
+    if fixed:
+        for arr_name, info in ARRS.items():
+            # Match arr to categories
+            arr_cats = []
+            if info['type'] == 'radarr':
+                arr_cats = ['movies-1080p', 'movies-4k']
+            elif info['type'] == 'sonarr':
+                arr_cats = ['shows-1080p', 'shows-4k']
+            if not categories_touched.intersection(arr_cats):
+                continue
+            scan_cmd = 'DownloadedMoviesScan' if info['type'] == 'radarr' else 'DownloadedEpisodesScan'
+            try:
+                arr_post(arr_name, 'command', {'name': scan_cmd})
+                scanned_arrs.append(arr_name)
+            except Exception:
+                pass
 
-    log_action(state, 'path_mismatch_fix',
-               f'Fixed {fixed} stuck symlinks ({already_ok} already ok, '
-               f'{no_match} no match, {no_video} no video, {errors} errors). '
-               "Triggered scan in: " + (", ".join(scanned_arrs) or "none"))
+        log_action(state, 'path_mismatch_fix',
+                   f'Fixed {fixed} stuck symlinks ({already_ok} already ok, '
+                   f'{no_match} no match, {no_video} no video, {given_up} given up, '
+                   f'{errors} errors). '
+                   "Triggered scan in: " + (", ".join(scanned_arrs) or "none"))
+    elif no_match or no_video or given_up:
+        log.info(f'path_mismatch: {len(stuck)} stuck, {already_ok} already ok, '
+                 f'{no_match} no zurg match, {no_video} no video found, '
+                 f'{given_up} given up on')
+    else:
+        log.debug(f'path_mismatch: {len(stuck)} stuck, all {already_ok} already ok')
 
-    if errors or no_match:
+    # Only notify about things a human has to act on: a symlink we could not
+    # create, or a release RD has failed to produce for hours. A repair that
+    # worked, or a torrent RD is still unpacking, is not news.
+    if errors or persistent_unmatched:
         body_lines = [f'Path mismatch: {fixed} fixed, {errors} errors, {no_match} unmatched']
         for n in fixed_names[:20]:
             body_lines.append(f'  \u2022 {n[:80]}')
@@ -3949,8 +4016,12 @@ def check_decypharr_path_mismatch(state):
             body_lines.append(f'  ... and {len(fixed_names) - 20} more')
         if scanned_arrs:
             body_lines.append("\nTriggered DownloadedScan in: " + ", ".join(scanned_arrs))
-        if no_match:
-            body_lines.append(f'\n{no_match} torrent(s) had no matching zurg directory (still being processed by RD)')
+        if persistent_unmatched:
+            mins = PATH_MISMATCH_UNMATCHED_ALERT * PATH_MISMATCH_COOLDOWN // 60
+            body_lines.append(f'\nNo matching zurg directory for {mins}+ min '
+                              f'(RD may never produce these):')
+            for n in persistent_unmatched[:20]:
+                body_lines.append(f'  \u2022 {n[:80]}')
         level = 'alert' if errors else 'info'
         send_notification('Path mismatch: issues detected', '\n'.join(body_lines), level=level)
 
